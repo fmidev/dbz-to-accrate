@@ -100,6 +100,30 @@ def read_hdf5(image_h5_file):
     return image_array, quantity, timestamp, gain, offset, int(nodata), int(undetect)
 
 
+def convert_dtype(accumulated_image, output_conf, nodata_mask, undetect_mask):
+    """ Change output data dtype (e.g. to 16 bit unsigned integer) and rescale data if needed
+    
+    Keyword arguments:
+    accumulated_image -- 
+    output_conf --
+    nodata_mask --
+    undetect_mask --
+
+    Return:
+    scaled_image_new_dtype --
+
+    """
+
+    scaled_image = (accumulated_image - output_conf['offset']) / output_conf['gain']
+    scaled_image[nodata_mask] = output_conf['nodata']
+    scaled_image[undetect_mask] = output_conf['undetect']
+    scaled_image_new_dtype = scaled_image.astype(output_conf['dtype'])
+
+    print('scaled_image_new_dtype', scaled_image_new_dtype)
+
+    return scaled_image_new_dtype
+
+
 def init_filedict_accumulation(image_h5_file):
     """ Copy common metadata from input file to be used as
     output file template.
@@ -124,7 +148,7 @@ def init_filedict_accumulation(image_h5_file):
     return file_dict_accum
 
 
-def write_accumulated_h5(output_h5,accumulated_image,file_dict_accum,date,time,startdate,starttime,enddate,endtime):
+def write_accumulated_h5(output_h5, accumulated_image, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf):
     """ Write accumulated precipitation rate to ODIM hdf5 file.
     
     Keyword arguments:
@@ -137,6 +161,7 @@ def write_accumulated_h5(output_h5,accumulated_image,file_dict_accum,date,time,s
     starttime --
     enddate --
     endtime --
+    output_conf
 
     """
     
@@ -149,14 +174,12 @@ def write_accumulated_h5(output_h5,accumulated_image,file_dict_accum,date,time,s
         'version':np.string_("H5rad 2.0")}
     #Insert startdate and -time and enddate- and time
     file_dict_accum['/dataset1/data1/what'] = {
-        #'gain':0.001, # Onko tama oikein?
-        #'nodata':65535,
-        'gain':0,
-        'nodata':-0.00001,
-        'offset':0,
+        'gain':output_conf['gain'],
+        'nodata':output_conf['nodata'],
+        'offset':output_conf['offset'],
         'product':np.string_("COMP"),
         'quantity':np.string_("ACRR"),
-        'undetect':0,
+        'undetect':output_conf['undetect'],
         'startdate':startdate,
         'starttime':starttime,
         'enddate':enddate,
@@ -172,8 +195,6 @@ def write_accumulated_h5(output_h5,accumulated_image,file_dict_accum,date,time,s
     with hiisi.HiisiHDF(output_h5, 'w') as h:
         h.create_from_filedict(file_dict_accum)
 
-
-        
 
 def main():
 
@@ -244,8 +265,10 @@ def main():
                 nodata_mask = ~np.isfinite(acc_rate_from_start) #(acc_rate_from_start == np.nan)
                 undetect_mask = (acc_rate_from_start == 0)
                 write_acc_rate_from_start = acc_rate_from_start
-                write_acc_rate_from_start[undetect_mask] = -0.0001
-                write_acc_rate_from_start[nodata_mask] = 0
+                #write_acc_rate_from_start[undetect_mask] = -0.0001
+                #write_acc_rate_from_start[nodata_mask] = 0
+
+                write_acc_rate_from_start = convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
                 
                 outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{timestep:03}', config=options.config)
                 
@@ -256,7 +279,7 @@ def main():
                 date = enddate
                 time = endtime
                 
-                write_accumulated_h5(outfile, write_acc_rate_from_start, file_dict_accum, date, time, startdate, starttime, enddate, endtime)
+                write_accumulated_h5(outfile, write_acc_rate_from_start, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
 
 
         
@@ -277,9 +300,12 @@ def main():
                 nodata_mask = ~np.isfinite(acc_rate_fixed_timestep)
                 undetect_mask = (acc_rate_fixed_timestep == 0)
                 write_acc_rate_fixed_timestep = acc_rate_fixed_timestep
-                write_acc_rate_fixed_timestep[undetect_mask] = -0.0001
-                write_acc_rate_fixed_timestep[nodata_mask] = 0
+                #write_acc_rate_fixed_timestep[undetect_mask] = -0.0001
+                #write_acc_rate_fixed_timestep[nodata_mask] = 0
 
+                write_acc_rate_fixed_timestep = convert_dtype(write_acc_rate_fixed_timestep, output_conf, nodata_mask, undetect_mask)
+
+                
                 
                 #Write to file
                 outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{output_conf["timestep"]:03}', config=options.config)
@@ -289,7 +315,7 @@ def main():
                 date = enddate
                 time = endtime
                 
-                write_accumulated_h5(outfile, write_acc_rate_fixed_timestep, file_dict_accum, date, time, startdate, starttime, enddate, endtime)
+                write_accumulated_h5(outfile, write_acc_rate_fixed_timestep, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
 
                 #Init next sum array
                 acc_rate_fixed_timestep = np.zeros_like(acc_rate_fixed_timestep)
