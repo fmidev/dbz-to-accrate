@@ -1,6 +1,5 @@
 import numpy as np
 import math
-import eccodes
 from pyproj import CRS
 from pyproj import Transformer
 import json
@@ -178,53 +177,3 @@ def dBZtoRate(dbz, coef, conv_dbzlim):
     # take into account the bright band
 
     return rr, sr
-
-
-
-def read_grib(image_grib_file,added_hours=0):
-
-    dtime = []
-    tempsl = []
-    latitudes = []
-    longitudes = []
-
-    with GribFile(image_grib_file) as grib:
-        for msg in grib:
-            ni = msg["Ni"]
-            nj = msg["Nj"]
-            forecast_time = dt.datetime.strptime("{:d}/{:02d}".format(msg["dataDate"], int(msg["dataTime"]/100)), "%Y%m%d/%H") + dt.timedelta(hours=msg[
-"forecastTime"])
-            dtime.append(forecast_time)
-            tempsl.append(np.asarray(msg["values"]).reshape(nj, ni))
-            latitudes.append(np.asarray(msg["latitudes"]).reshape(nj, ni))
-            longitudes.append(np.asarray(msg["longitudes"]).reshape(nj, ni))
-    temps = np.asarray(tempsl)
-    latitudes = np.asarray(latitudes)
-    longitudes = np.asarray(longitudes)
-    latitudes = latitudes[0,:,:]
-    longitudes = longitudes[0,:,:]
-    nodata = 9999
-    mask_nodata = np.ma.masked_where(temps == nodata,temps)
-    if len(temps[np.where(~np.ma.getmask(mask_nodata))])>0:
-        temps_min = temps[np.where(~np.ma.getmask(mask_nodata))].min()
-        temps_max = temps[np.where(~np.ma.getmask(mask_nodata))].max()
-    else:
-        print("input " + image_grib_file + " contains only missing data!")
-        temps_min = nodata
-        temps_max = nodata
-    if type(dtime) == list:
-        dtime = [(i+dt.timedelta(hours=added_hours)) for i in dtime]
-    else:
-        dtime = dtime+dt.timedelta(hours=added_hours)
-    return temps, temps_min, temps_max, dtime, mask_nodata, nodata, longitudes, latitudes
-
-
-def read_and_reproject_nwp_data():
-    # PPN ravake projection (attribute: projdef) +proj=utm +zone=35 +ellps=GRS80 +units=m +no_defs
-    projdef_fmippn="  +proj=utm +zone=35 +ellps=GRS80 +units=m +no_defs"
-    crs_fmippn = CRS.from_proj4(projdef)
-
-    projdef_harmonie = ""
-    crs_harmonie = CRS.from_proj4(projdef)
-
-    harmonie_grid = ""

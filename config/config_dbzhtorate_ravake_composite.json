@@ -9,16 +9,17 @@
   },
   "input": {
       "dir": "/input",
-      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf={config}.h5",
-      "timeres": 1,
-      "fc_len": 240
+      "filename": "{timestamp}_radar.rack.comp_CONF=FMIPPN-SMALL,ANDRE.h5",
+      "timeres": 5
   },
+  "interp": {
+      "interpolate": true,
+      "timeres": 1
+  },   
   "output": {
       "dir": "/output",
-      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
-      "write_acrr_from_start": true,
-      "write_acrr_fixed_step": true,
-      "timestep": 60,
+      "timeres": 5,
+      "filename": "{timestamp}_radar.rack.comp.accrate.{timeres}min_CONF=FMIPPN-SMALL,ANDRE.h5",
       "dtype": "uint16",
       "gain": 0.001,
       "offset": 0,

@@ -1,0 +1,29 @@
+{
+  "coef": {
+      "zr_a": 223.0,
+      "zr_b": 1.53,
+      "zr_a_c": 223.0,
+      "zr_b_c": 1.43,
+      "zs_a": 115,
+      "zs_b": 1.35
+  },
+  "input": {
+      "dir": "/input/{year}/{month}/{day}/input_composites",
+      "filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI,ANDRE.h5",
+      "timeres": 5
+  },
+  "interp": {
+      "interpolate": true,
+      "timeres": 1
+  },   
+  "output": {
+      "dir": "/output/{year}/{month}/{day}/accrate_composites",
+      "timeres": 5,
+      "filename": "{timestamp}_radar.rack.comp.accrate.{timeres}min_CONF=HULEHENRI.h5",
+      "dtype": "uint16",
+      "gain": 0.001,
+      "offset": 0,
+      "nodata": 65535,
+      "undetect": 0
+  }
+}

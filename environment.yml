@@ -1,4 +1,4 @@
-name: fmippn-dbzhtorate
+name: fmippn_dbzhtorate
 channels:
   - conda-forge
   - defaults
@@ -6,12 +6,13 @@ dependencies:
   - python>=3.7
   - git
   - numpy
+  - scipy
   - h5py
-  - Cython
   - pillow
-  - eccodes
-  - pyproj
+  - pysteps=1.4
+  - dask
+  - pyfftw
+  - matplotlib
   - pip
   - pip:
-    - eccodes
     - git+https://github.com/karjaljo/hiisi.git
