@@ -9,7 +9,7 @@
   },
   "input": {
       "dir": "/input/{year}/{month}/{day}/input_composites",
-      "filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI.h5",
+      "filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI,ANDRE.h5",
       "timeres": 5
   },
   "interp": {

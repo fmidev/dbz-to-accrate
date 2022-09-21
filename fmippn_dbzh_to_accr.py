@@ -17,7 +17,7 @@ import utils
 
 def main():
 
-    config_file = f'/config/config_dbzhtorate_{options.config}.json'
+    config_file = f'/config/{options.config}.json'
     coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
     
     # Read first file and convert to rate to initiate sum array and output file_dict

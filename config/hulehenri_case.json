@@ -13,6 +13,10 @@
       "timeres": 1,
       "fc_len": 240
   },
+  "interp": {
+      "interpolate": true,
+      "timeres": 1
+  },
   "output": {
       "dir": "/output",
       "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",

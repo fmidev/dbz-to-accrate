@@ -4,7 +4,7 @@
 #docker build --no-cache -t dbzh_to_acc_rate .
 
 #CONFIG=${CONFIG:-ravake_composite}
-CONFIG=${CONFIG:-hulehenri_composite}
+CONFIG=${CONFIG:-hulehenri_composite_case}
 FILETYPE=${FILETYPE:-composite}
 TIMESTAMP=${TIMESTAMP:-201208270000}
 
@@ -40,7 +40,7 @@ docker run \
        --mount type=bind,source="$(pwd)"/fmippn_dbzh_to_accr.py,target=/fmippn_dbzh_to_accr.py \
        --mount type=bind,source="$(pwd)"/composite_dbzh_to_accr.py,target=/composite_dbzh_to_accr.py \
        --mount type=bind,source="$(pwd)"/utils.py,target=/utils.py \
-       --mount type=bind,source="$(pwd)"/config/config_dbzhtorate_ravake.json,target=/config/config_dbzhtorate_ravake.json \
-       --mount type=bind,source="$(pwd)"/config/config_dbzhtorate_ravake_composite.json,target=/config/config_dbzhtorate_ravake_composite.json \
-       --mount type=bind,source="$(pwd)"/config/config_dbzhtorate_hulehenri_composite.json,target=/config/config_dbzhtorate_hulehenri_composite.json \
+       --mount type=bind,source="$(pwd)"/config/ravake.json,target=/config/ravake.json \
+       --mount type=bind,source="$(pwd)"/config/ravake_composite.json,target=/config/ravake_composite.json \
+       --mount type=bind,source="$(pwd)"/config/hulehenri_composite_case.json,target=/config/hulehenri_composite_case.json \
        dbzh_to_acc_rate:latest
