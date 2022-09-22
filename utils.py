@@ -106,25 +106,11 @@ def convert_dtype(accumulated_image, output_conf, nodata_mask, undetect_mask):
     Return:
     scaled_image_new_dtype --
 
-    """
-
-    print('max acc:', np.max(accumulated_image[accumulated_image>0.5]))
-    print('min acc:', np.min(accumulated_image[accumulated_image>0.5]))
-    
+    """    
     scaled_image = (accumulated_image - output_conf['offset']) / output_conf['gain']
-    print('max scaled acc:', np.max(scaled_image[accumulated_image>0.5]))
-    print('min scaled acc:', np.min(scaled_image[accumulated_image>0.5]))
-
-    
     scaled_image[nodata_mask] = output_conf['nodata']
     scaled_image[undetect_mask] = output_conf['undetect']
     scaled_image_new_dtype = scaled_image.astype(output_conf['dtype'])
-
-    print('max scaled 16bit:', np.max(scaled_image_new_dtype[accumulated_image>0.5]))
-    print('min scaled 16bit:', np.min(scaled_image_new_dtype[accumulated_image>0.5]))
-
-    
-    print('scaled_image_new_dtype', scaled_image_new_dtype)
 
     return scaled_image_new_dtype
 
