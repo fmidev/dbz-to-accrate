@@ -17,13 +17,13 @@ import utils
 import advection_correction
 
 
-def main():
+def run(timestamp, config):
 
-    config_file = f'/config/{options.config}.json'
+    config_file = f'/config/{config}.json'
     coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
 
     #Get current and earlier timestamp
-    second_timestamp = options.timestamp
+    second_timestamp = timestamp
     formatted_time_second = datetime.datetime.strptime(second_timestamp,'%Y%m%d%H%M')
     first_timestamp = (formatted_time_second - datetime.timedelta(minutes=(input_conf['timeres']))).strftime('%Y%m%d%H%M')
     
@@ -79,7 +79,7 @@ def main():
     outdir = output_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])
     print('outdir:', outdir)
     Path(outdir).mkdir(parents=True, exist_ok=True)
-    outfile = outdir + '/' + output_conf['filename'].format(timestamp=options.timestamp, timeres=input_conf['timeres'])
+    outfile = outdir + '/' + output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])
     startdate = first_timestamp[0:8]
     starttime = first_timestamp[8:14]
     enddate = second_timestamp[0:8] + "00"
@@ -89,6 +89,10 @@ def main():
     print('date: ',enddate,' time: ',endtime)
     utils.write_accumulated_h5(outfile, acc_rate, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
 
+
+def main():
+    
+    run(options.timestamp, options.config)
     
                 
 if __name__ == '__main__':

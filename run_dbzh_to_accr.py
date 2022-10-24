@@ -1,16 +1,22 @@
 import argparse
+import json
 
-import composite_dbzh_to_accr
-import fmippn_dbzh_to_accr
+import observation_dbzh_to_accr
+import forecast_dbzh_to_accr
 
 
 def main():
 
-    if options.filetype == "forecast":
-        fmippn_dbzh_to_accr(**args)
+    config_file = f"config/{options.config}.json"
+    with open(config_file, "r") as jsonfile:
+        config = json.load(jsonfile)
+        filetype = config["input"]["filetype"]
+      
+    if filetype == "forecast":
+        forecast_dbzh_to_accr.run(options.timestamp, options.config)
 
-    elif options.filetype == "composite":
-        composite_dbzh_to_accr(**args)
+    elif filetype == "observation":
+        observation_dbzh_to_accr.run(options.timestamp, options.config)
     
                 
 if __name__ == '__main__':
@@ -24,11 +30,6 @@ if __name__ == '__main__':
                         type = str,
                         default = 'ravake_composite',
                         help = 'Config file to use.')
-    parser.add_argument('--filetype',
-                        type = str,
-                        default = 'composite',
-                        help = '[forecast|composite]')
-
     
     options = parser.parse_args()
     args = vars(options)

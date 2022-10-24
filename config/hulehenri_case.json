@@ -1,32 +1,33 @@
 {
-  "coef": {
-      "zr_a": 223.0,
-      "zr_b": 1.53,
-      "zr_a_c": 223.0,
-      "zr_b_c": 1.43,
-      "zs_a": 115,
-      "zs_b": 1.35
-  },
-  "input": {
-      "dir": "/input",
-      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf={config}.h5",
-      "timeres": 1,
-      "fc_len": 240
-  },
-  "interp": {
-      "interpolate": true,
-      "timeres": 1
-  },
-  "output": {
-      "dir": "/output",
-      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
-      "write_acrr_from_start": false,
-      "write_acrr_fixed_step": true,
-      "timestep": 5,
-      "dtype": "uint16",
-      "gain": 0.001,
-      "offset": 0,
-      "nodata": 65535,
-      "undetect": 0
-  }
+    "coef": {
+	"zr_a": 223.0,
+	"zr_b": 1.53,
+	"zr_a_c": 223.0,
+	"zr_b_c": 1.43,
+	"zs_a": 115,
+	"zs_b": 1.35
+    },
+    "input": {
+	"filetype": "forecast",
+	"dir": "/input",
+	"filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf={config}.h5",
+	"timeres": 1,
+	"fc_len": 240
+    },
+    "interp": {
+	"interpolate": true,
+	"timeres": 1
+    },
+    "output": {
+	"dir": "/output",
+	"filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
+	"write_acrr_from_start": false,
+	"write_acrr_fixed_step": true,
+	"timestep": 5,
+	"dtype": "uint16",
+	"gain": 0.001,
+	"offset": 0,
+	"nodata": 65535,
+	"undetect": 0
+    }
 }

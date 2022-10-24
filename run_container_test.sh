@@ -37,10 +37,9 @@ docker run \
        --mount type=bind,source=$INPATH,target=/input \
        --mount type=bind,source=$OUTPATH,target=/output \
        --mount type=bind,source=$LOGPATH,target=/log \
-       --mount type=bind,source="$(pwd)"/fmippn_dbzh_to_accr.py,target=/fmippn_dbzh_to_accr.py \
-       --mount type=bind,source="$(pwd)"/composite_dbzh_to_accr.py,target=/composite_dbzh_to_accr.py \
+       --mount type=bind,source="$(pwd)"/config,target=/config \
+       --mount type=bind,source="$(pwd)"/run_dbzh_to_accr.py,target=/run_dbzh_to_accr.py \
+       --mount type=bind,source="$(pwd)"/observation_dbzh_to_accr.py,target=/observation_dbzh_to_accr.py \
+       --mount type=bind,source="$(pwd)"/forecast_dbzh_to_accr.py,target=/forecast_dbzh_to_accr.py \
        --mount type=bind,source="$(pwd)"/utils.py,target=/utils.py \
-       --mount type=bind,source="$(pwd)"/config/ravake.json,target=/config/ravake.json \
-       --mount type=bind,source="$(pwd)"/config/ravake_composite.json,target=/config/ravake_composite.json \
-       --mount type=bind,source="$(pwd)"/config/hulehenri_composite_case.json,target=/config/hulehenri_composite_case.json \
        dbzh_to_acc_rate:latest

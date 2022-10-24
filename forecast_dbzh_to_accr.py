@@ -15,14 +15,14 @@ import dbzh_to_rate
 import utils
 
 
-def main():
+def run(timestamp, config):
 
-    config_file = f'/config/{options.config}.json'
+    config_file = f'/config/{config}.json'
     coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
     
     # Read first file and convert to rate to initiate sum array and output file_dict
     first_timestep = input_conf['timeres']
-    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{first_timestep:03}', config=options.config)
+    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{first_timestep:03}', config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     nodata_mask_first = (first_image_array == nodata)
     undetect_mask_first = (first_image_array == undetect)
@@ -49,10 +49,10 @@ def main():
         print('timestep:', timestep)
 
         # Input file: {timestamp}+{timestep}min_radar.fmippn.det_conf={config}.h5
-        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{timestep:03}', config=options.config)
+        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', config=config)
         
         # Read image array hdf5's and convert dbzh to rain rate (mm/timeresolution)
-        image_array, quantity, timestamp, gain, offset, nodata, undetect = utils.read_hdf5(input_file)
+        image_array, quantity, fc_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(input_file)
         
         # Convert to precipitation rate and mask nodata = np.nan and undetect = 0 for sum calculation
         nodata_mask = (image_array == nodata)
@@ -68,8 +68,8 @@ def main():
             acc_rate_fixed_timestep = np.where(np.isnan(acc_rate_fixed_timestep), image_array, acc_rate_fixed_timestep + np.nan_to_num(image_array))
             
             if n_fixed == 0:
-                startdate = timestamp[0:8]
-                starttime = timestamp[8:14]
+                startdate = fc_timestamp[0:8]
+                starttime = fc_timestamp[8:14]
 
             n_fixed += 1
             
@@ -82,9 +82,9 @@ def main():
                 write_acc_rate_fixed_timestep = utils.convert_dtype(write_acc_rate_fixed_timestep, output_conf, nodata_mask, undetect_mask)
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{output_conf["timestep"]:03}', config=options.config)
-                enddate = timestamp[0:8]
-                endtime = timestamp[8:14]
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{output_conf["timestep"]:03}', config=config)
+                enddate = fc_timestamp[0:8]
+                endtime = fc_timestamp[8:14]
                 date = enddate
                 time = endtime
                 
@@ -110,18 +110,23 @@ def main():
                 
                 write_acc_rate_from_start = utils.convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
                 
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=options.timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{timestep:03}', config=options.config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{timestep:03}', config=config)
                 
                 startdate = startdate_first
                 starttime = starttime_first
-                enddate = timestamp[0:8]
-                endtime = timestamp[8:14]
+                enddate = fc_timestamp[0:8]
+                endtime = fc_timestamp[8:14]
                 date = enddate
                 time = endtime
                 
                 utils.write_accumulated_h5(outfile, write_acc_rate_from_start, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
-                
-                
+
+
+def main():
+
+    run(options.timestamp, options.config)
+
+    
 if __name__ == '__main__':
     #Parse commandline arguments
     parser = argparse.ArgumentParser()

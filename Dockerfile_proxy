@@ -34,4 +34,4 @@ RUN conda env create fmippn_dbzhtorate
 # Run
 ENV config ravake
 ENV timestamp 202007071130
-ENTRYPOINT conda run -n fmippn_dbzhtorate python fmippn_dbzh_to_accr.py --config=$config --timestamp=$timestamp
+ENTRYPOINT conda run -n fmippn_dbzhtorate python run_dbzh_to_accr.py --config=$config --timestamp=$timestamp
