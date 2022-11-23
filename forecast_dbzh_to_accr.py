@@ -14,8 +14,8 @@ def run(timestamp, config):
     
     # Read first file and convert to rate to initiate sum array and output file_dict
     first_timestep = input_conf['timeres']    
-    fc_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
-    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestamp=fc_timestamp, fc_timestep=f'{first_timestep:03}', config=config)
+    second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
+    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestamp=second_timestamp, fc_timestep=f'{first_timestep:03}', config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     nodata_mask_first = (first_image_array == nodata)
     undetect_mask_first = (first_image_array == undetect)
@@ -40,8 +40,8 @@ def run(timestamp, config):
     for timestep in range(input_conf['timeres'], input_conf['fc_len']+1, input_conf['timeres']):
 
         # Input file
-        fc_timestamp = (timestamp_formatted + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M')
-        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', config=config)
+        second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M')
+        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', config=config)
         
         # Read image array hdf5's and convert dbzh to rain rate (mm/timeresolution)
         image_array, quantity, fc_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(input_file)
@@ -74,7 +74,7 @@ def run(timestamp, config):
                 write_acc_rate_fixed_timestep = utils.convert_dtype(write_acc_rate_fixed_timestep, output_conf, nodata_mask, undetect_mask)
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep"]:03}', config = config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -102,7 +102,7 @@ def run(timestamp, config):
                 
                 write_acc_rate_from_start = utils.convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
                 
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{timestep:03}', config=config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{timestep:03}', config=config)
                 
                 startdate = startdate_first
                 starttime = starttime_first
