@@ -10,11 +10,11 @@ def run(timestamp, config):
 
     config_file = f'/config/{config}.json'
     coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
-    startdate = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
+    timestamp_formatted = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
     
     # Read first file and convert to rate to initiate sum array and output file_dict
     first_timestep = input_conf['timeres']    
-    fc_timestamp = (startdate + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
+    fc_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
     first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestamp=fc_timestamp, fc_timestep=f'{first_timestep:03}', config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     nodata_mask_first = (first_image_array == nodata)
@@ -40,7 +40,7 @@ def run(timestamp, config):
     for timestep in range(input_conf['timeres'], input_conf['fc_len']+1, input_conf['timeres']):
 
         # Input file
-        fc_timestamp = (startdate + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M')
+        fc_timestamp = (timestamp_formatted + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M')
         input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', config=config)
         
         # Read image array hdf5's and convert dbzh to rain rate (mm/timeresolution)
