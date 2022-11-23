@@ -3,9 +3,7 @@
 # Build
 #docker build --no-cache -t dbzh_to_acc_rate .
 
-#CONFIG=${CONFIG:-ravake_composite}
-CONFIG=${CONFIG:-hulehenri_composite_case}
-FILETYPE=${FILETYPE:-composite}
+CONFIG=${CONFIG:-hulehenri_case}
 TIMESTAMP=${TIMESTAMP:-201208270000}
 
 #INPATH=/tutka/data/dev/cache/radar/fmippn/ravake
@@ -26,9 +24,6 @@ echo LOGPATH: $LOGPATH
 #Mkdirs if log and outpaths have been cleaned                                                                                                           
 mkdir -p $OUTPATH
 mkdir -p $LOGPATH
-
-#--mount type=bind,source=/mnt/meru/data/prod/radman/mallidata,target=/nwp_input \
-#--user 7939:5008 \
 
 # Run
 docker run \

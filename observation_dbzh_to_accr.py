@@ -1,15 +1,6 @@
-import h5py
-import hiisi
 import numpy as np
 import argparse
 import datetime
-import configparser
-import re
-import gzip
-from PIL import Image
-import math
-import time
-import json
 from pathlib import Path
 
 import dbzh_to_rate
@@ -28,8 +19,8 @@ def run(timestamp, config):
     first_timestamp = (formatted_time_second - datetime.timedelta(minutes=(input_conf['timeres']))).strftime('%Y%m%d%H%M')
     
     #Read image array hdf5's
-    first_file = input_conf['dir'].format(year=first_timestamp[0:4], month=first_timestamp[4:6], day=first_timestamp[6:8]) + '/' + input_conf['filename'].format(timestamp=first_timestamp)
-    second_file = input_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8]) + '/' + input_conf['filename'].format(timestamp=second_timestamp)
+    first_file = f"{input_conf['dir'].format(year=first_timestamp[0:4], month=first_timestamp[4:6], day=first_timestamp[6:8])}/{input_conf['filename'].format(timestamp=first_timestamp)}"
+    second_file = f"{input_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])}/{input_conf['filename'].format(timestamp=second_timestamp)}"
 
     print('first_file: ', first_file)
     print('second_file: ', second_file)
@@ -65,11 +56,6 @@ def run(timestamp, config):
     acc_rate = np.full_like(first_image_array, np.nan)
     for i in range(0,len(R_interp)):
         acc_rate = np.where(np.isnan(acc_rate), R_interp[i], acc_rate + np.nan_to_num(R_interp[i]))
-
-        #Test plot
-        plot_name='/output/pysteps_interp_' + str(i) + '.png'
-        utils.plot_array(R_interp[i], plot_name)
-
     
     nodata_mask = ~np.isfinite(acc_rate)
     undetect_mask = (acc_rate == 0)
@@ -79,11 +65,11 @@ def run(timestamp, config):
     outdir = output_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])
     print('outdir:', outdir)
     Path(outdir).mkdir(parents=True, exist_ok=True)
-    outfile = outdir + '/' + output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])
+    outfile = f"{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])}"
     startdate = first_timestamp[0:8]
     starttime = first_timestamp[8:14]
-    enddate = second_timestamp[0:8] + "00"
-    endtime = second_timestamp[8:14] + "00"
+    enddate = f"{second_timestamp[0:8]}00"
+    endtime = f"{second_timestamp[8:14]}00"
     date = enddate
     time = endtime
     print('date: ',enddate,' time: ',endtime)

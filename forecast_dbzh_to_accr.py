@@ -1,15 +1,6 @@
-import h5py
-import hiisi
 import numpy as np
 import argparse
 import datetime
-import configparser
-import re
-import gzip
-from PIL import Image
-import math
-import time
-import json
 
 import dbzh_to_rate
 import utils
@@ -19,10 +10,12 @@ def run(timestamp, config):
 
     config_file = f'/config/{config}.json'
     coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
+    startdate = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
     
     # Read first file and convert to rate to initiate sum array and output file_dict
-    first_timestep = input_conf['timeres']
-    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{first_timestep:03}', config=config)
+    first_timestep = input_conf['timeres']    
+    fc_timestamp = (startdate + (i+1) * datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
+    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestamp=fc_timestamp, fc_timestep=f'{first_timestep:03}', config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     nodata_mask_first = (first_image_array == nodata)
     undetect_mask_first = (first_image_array == undetect)
@@ -48,8 +41,9 @@ def run(timestamp, config):
 
         print('timestep:', timestep)
 
-        # Input file: {timestamp}+{timestep}min_radar.fmippn.det_conf={config}.h5
-        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', config=config)
+        # Input file
+        fc_timestamp = (startdate + (i+1) * datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
+        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', config=config)
         
         # Read image array hdf5's and convert dbzh to rain rate (mm/timeresolution)
         image_array, quantity, fc_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(input_file)
@@ -82,7 +76,7 @@ def run(timestamp, config):
                 write_acc_rate_fixed_timestep = utils.convert_dtype(write_acc_rate_fixed_timestep, output_conf, nodata_mask, undetect_mask)
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{output_conf["timestep"]:03}', config=config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -110,7 +104,7 @@ def run(timestamp, config):
                 
                 write_acc_rate_from_start = utils.convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
                 
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp=timestamp, fc_timestep=f'{timestep:03}', acc_timestep=f'{timestep:03}', config=config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = fc_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{timestep:03}', config=config)
                 
                 startdate = startdate_first
                 starttime = starttime_first
