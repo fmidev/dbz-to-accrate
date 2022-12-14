@@ -18,6 +18,10 @@
 	"interpolate": true,
 	"timeres": 1
     },
+    "snowprob": {
+	"dir": "/tutka/data/incoming/model/harmonie/snowprob",
+	"filename": "{timestamp}_model.harmonie.snowprob_CONF=RAVAKE.h5"
+    },
     "output": {
 	"dir": "/output",
 	"filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",

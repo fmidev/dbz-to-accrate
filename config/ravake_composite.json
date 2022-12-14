@@ -16,7 +16,11 @@
     "interp": {
 	"interpolate": true,
 	"timeres": 1
-    },   
+    },
+    "snowprob": {
+	"dir": "/tutka/data/incoming/model/harmonie/snowprob",
+	"filename": "{timestamp}_model.harmonie.snowprob_CONF=RAVAKE.h5"
+    },
     "output": {
 	"dir": "/output",
 	"timeres": 5,

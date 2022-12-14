@@ -9,7 +9,7 @@ import utils
 def run(timestamp, config):
 
     config_file = f'/config/{config}.json'
-    coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
+    coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(config_file)
     timestamp_formatted = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
     
     # Read first file and convert to rate to initiate sum array and output file_dict
@@ -19,13 +19,18 @@ def run(timestamp, config):
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     nodata_mask_first = (first_image_array == nodata)
     undetect_mask_first = (first_image_array == undetect)
+
+    # Read probability of snow from file
+    snowprob_file = snowprob_conf['dir'] + '/' + snowprob_conf['filename'].format(timestamp=timestamp)
+    snowprob, snowprob_quantity, snowprob_timestamp, snowprob_gain, snowprob_offset, snowprob_nodata, snowprob_undetect = utils.read_hdf5(snowprob_file)
+    print("snowprob:", snowprob)
     
     # Calculate look up table (lut) for dBZ -> rate conversion.
-    lut = dbzh_to_rate.calc_lookuptable_dBZtoRR(input_conf['timeres'], coef, nodata, undetect, gain, offset)
+    lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(input_conf['timeres'], coef, nodata, undetect, gain, offset)
 
     # Init arrays
     file_dict_accum = utils.init_filedict_accumulation(first_file)
-    first_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array),lut)
+    first_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(first_image_array), lut_rr, lut_sr, snowprob) 
     
     startdate_first = first_timestamp[0:8]
     starttime_first = first_timestamp[8:14]
@@ -49,7 +54,7 @@ def run(timestamp, config):
         # Convert to precipitation rate and mask nodata = np.nan and undetect = 0 for sum calculation
         nodata_mask = (image_array == nodata)
         undetect_mask = (image_array == undetect)
-        image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(image_array),lut)
+        image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(image_array), lut_rr, lut_sr, snowprob) 
         image_array[nodata_mask] = np.nan
         image_array[undetect_mask] = 0
 

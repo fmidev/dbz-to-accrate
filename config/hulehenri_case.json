@@ -10,13 +10,17 @@
     "input": {
 	"filetype": "forecast",
 	"dir": "/input",
-	"filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf={config}.h5",
+	"filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf=hulehenri.h5",
 	"timeres": 1,
 	"fc_len": 240
     },
     "interp": {
 	"interpolate": true,
 	"timeres": 1
+    },
+    "snowprob": {
+	"dir": "/tutka/data/incoming/model/harmonie/snowprob",
+	"filename": "{timestamp}_model.harmonie.snowprob_CONF=HULEHENRI.h5"
     },
     "output": {
 	"dir": "/output",

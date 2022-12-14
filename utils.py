@@ -25,10 +25,11 @@ def read_config(config_file):
  
     coef = data['coef']
     interp_conf = data['interp']
+    snowprob_conf = data['snowprob']
     input_conf = data['input']
     output_conf = data['output']
     
-    return coef, interp_conf, input_conf, output_conf
+    return coef, interp_conf, snowprob_conf, input_conf, output_conf
 
 
 def read_hdf5(image_h5_file):
@@ -62,8 +63,14 @@ def read_hdf5(image_h5_file):
             image_array=comp.dataset
             quantity='RATE'
         else:
-            print('Error: DBZH or RATE array not found in the input image file!')
-            sys.exit(1)
+            # Look for SNOWPROB array
+            test=comp.select_dataset('SNOWPROB')
+            if test != None:
+                image_array=comp.dataset
+                quantity='SNOWPROB'            
+            else:
+                print('Error: DBZH, RATE or SNOWPROB array not found in the input image file!')
+                sys.exit(1)
 
     #Read nodata and undetect values from metadata for masking
     gen = comp.attr_gen('nodata')

@@ -11,7 +11,7 @@ import advection_correction
 def run(timestamp, config):
 
     config_file = f'/config/{config}.json'
-    coef, interp_conf, input_conf, output_conf = utils.read_config(config_file)
+    coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(config_file)
 
     #Get current and earlier timestamp
     second_timestamp = timestamp
@@ -32,16 +32,20 @@ def run(timestamp, config):
     nodata_mask_second = (second_image_array == nodata)
     undetect_mask_second = (second_image_array == undetect)
 
-    # Calculate look up table (lut) for dBZ -> rate conversion.
-    lut = dbzh_to_rate.calc_lookuptable_dBZtoRR(interp_conf['timeres'], coef, nodata, undetect, gain, offset)
+    # Read probability of snow in array from file                           
+    snowprob_file = snowprob_conf['dir'] + '/' + snowprob_conf['filename'].format(timestamp=timestamp)
+    snowprob, snowprob_quantity, snowprob_timestamp, snowprob_gain, snowprob_offset, snowprob_nodata, snowprob_undetect = utils.read_hdf5(snowprob_file)
+
+    # Calculate look up tables (lut) for dBZ -> rate conversion.
+    lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(interp_conf['timeres'], coef, nodata, undetect, gain, offset)
 
     # Init output file_dict 
     file_dict_accum = utils.init_filedict_accumulation(first_file)
 
     # Convert image arrays dBZ -> rate
-    first_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array),lut)
-    second_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(second_image_array),lut)
-
+    first_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(first_image_array), lut_rr, lut_sr, snowprob)
+    second_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(second_image_array), lut_rr, lut_sr, snowprob)    
+    
     # Change nodata and undetect to zero and np.nan before interpolation
     first_image_array[nodata_mask_first] = np.nan
     first_image_array[undetect_mask_first] = 0
