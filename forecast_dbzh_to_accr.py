@@ -37,9 +37,13 @@ def run(timestamp, config):
 
     if output_conf["write_acrr_fixed_step"]:
         acc_rate_fixed_timestep = np.full_like(first_image_array, np.nan)
-        n_fixed = 0    
+        n_fixed = 0
+    if output_conf["write_acrr_fixed_step_2"]:  
+        acc_rate_fixed_timestep_2 = np.full_like(first_image_array, np.nan)
+        n_fixed_2 = 0
     if output_conf["write_acrr_from_start"]:
         acc_rate_from_start = np.full_like(first_image_array, np.nan)
+        
         
     # Loop through forecast fields
     for timestep in range(input_conf['timeres'], input_conf['fc_len']+1, input_conf['timeres']):
@@ -58,10 +62,9 @@ def run(timestamp, config):
         image_array[nodata_mask] = np.nan
         image_array[undetect_mask] = 0
 
-        
+        # Calculate sum and write to file in fixed time interval
         if output_conf["write_acrr_fixed_step"]:
 
-            #acc_rate_fixed_timestep = acc_rate_fixed_timestep + image_array
             acc_rate_fixed_timestep = np.where(np.isnan(acc_rate_fixed_timestep), image_array, acc_rate_fixed_timestep + np.nan_to_num(image_array))
             
             if n_fixed == 0:
@@ -92,9 +95,42 @@ def run(timestamp, config):
                 n_fixed = 0
 
                 
-        if output_conf["write_acrr_from_start"]:
+        # Calculate sum and write to file in fixed time interval
+        if output_conf["write_acrr_fixed_step_2"]:
+
+            acc_rate_fixed_timestep_2 = np.where(np.isnan(acc_rate_fixed_timestep_2), image_array, acc_rate_fixed_timestep_2 + np.nan_to_num(image_array))
             
-            # Calculate and write to file accumulated rate from beginning of forecast
+            if n_fixed_2 == 0:
+                startdate = fc_timestamp[0:8]
+                starttime = fc_timestamp[8:14]
+
+            n_fixed_2 += 1
+            
+            if timestep % output_conf["timestep_2"] == 0:
+
+                nodata_mask = ~np.isfinite(acc_rate_fixed_timestep_2)
+                undetect_mask = (acc_rate_fixed_timestep_2 == 0)
+                write_acc_rate_fixed_timestep_2 = acc_rate_fixed_timestep_2
+                
+                write_acc_rate_fixed_timestep_2 = utils.convert_dtype(write_acc_rate_fixed_timestep_2, output_conf, nodata_mask, undetect_mask)
+
+                #Write to file
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep_2"]:03}', config = config)
+                enddate = fc_timestamp[0:8]
+                endtime = fc_timestamp[8:14]
+                date = enddate
+                time = endtime
+                
+                utils.write_accumulated_h5(outfile, write_acc_rate_fixed_timestep_2, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
+
+                #Init next sum array
+                acc_rate_fixed_timestep_2 = np.full_like(acc_rate_fixed_timestep_2, np.nan)
+                n_fixed_2 = 0
+
+                
+        # Calculate and write to file accumulated rate from beginning of forecast            
+        if output_conf["write_acrr_from_start"]:
+    
             acc_rate_from_start = np.where(np.isnan(acc_rate_from_start), image_array, acc_rate_from_start + np.nan_to_num(image_array))
             
             if timestep % output_conf["timestep"] == 0:
