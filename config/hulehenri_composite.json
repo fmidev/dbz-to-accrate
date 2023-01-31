@@ -9,8 +9,9 @@
     },
     "input": {
 	"filetype": "observation",
-	"dir": "/input/{year}/{month}/{day}/input_composites",
-	"filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI,ANDRE.h5",
+	"dir_contains_date": false,
+	"dir": "/tutka/data/dev/cache/radar/rack/comp",
+	"filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI.h5",
 	"timeres": 5
     },
     "interp": {
@@ -22,7 +23,7 @@
 	"filename": "{timestamp}_model.harmonie.snowprob_CONF=HULEHENRI.h5"
     },
     "output": {
-	"dir": "/output/{year}/{month}/{day}/accrate_composites",
+	"dir": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
 	"timeres": 5,
 	"filename": "{timestamp}_radar.rack.comp.accrate.{timeres}min_CONF=HULEHENRI.h5",
 	"dtype": "uint16",

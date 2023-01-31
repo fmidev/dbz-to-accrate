@@ -19,8 +19,12 @@ def run(timestamp, config):
     first_timestamp = (formatted_time_second - datetime.timedelta(minutes=(input_conf['timeres']))).strftime('%Y%m%d%H%M')
     
     #Read image array hdf5's
-    first_file = f"{input_conf['dir'].format(year=first_timestamp[0:4], month=first_timestamp[4:6], day=first_timestamp[6:8])}/{input_conf['filename'].format(timestamp=first_timestamp)}"
-    second_file = f"{input_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])}/{input_conf['filename'].format(timestamp=second_timestamp)}"
+    if input_conf['dir_contains_date']:
+        first_file = f"{input_conf['dir'].format(year=first_timestamp[0:4], month=first_timestamp[4:6], day=first_timestamp[6:8])}/{input_conf['filename'].format(timestamp=first_timestamp)}"
+        second_file = f"{input_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])}/{input_conf['filename'].format(timestamp=second_timestamp)}"
+    else:
+        first_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=first_timestamp)}"
+        second_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=second_timestamp)}"
 
     print('first_file: ', first_file)
     print('second_file: ', second_file)
