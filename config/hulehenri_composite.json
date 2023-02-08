@@ -9,8 +9,8 @@
     },
     "input": {
 	"filetype": "observation",
-	"dir_contains_date": false,
-	"dir": "/tutka/data/dev/cache/radar/rack/comp",
+	"dir_contains_date": true,
+	"dir": "/tutka/data/dev/cache/{year}/{month}/{day}/radar/rack/comp",
 	"filename": "{timestamp}_radar.rack.comp_CONF=HULEHENRI.h5",
 	"timeres": 5
     },

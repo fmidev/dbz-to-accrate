@@ -44,19 +44,11 @@ def dBZtoRR(dbz, coef):
         conv_dbzlim = 10.0 * math.log10(zr_a)
     else:
         R = (zr_a / zr_a_c) ** (1.0 / (zr_b_c - zr_b))
-        conv_dbzlim = 10.0 * math.log10(zr_a * (R ** zr_b))    
-    
-    #Help coefficients for rain
-    zr_b_10 = zr_b_10_c = 10.0 * zr_b
-    zr_c = zr_c_c = -math.log10(zr_a) / zr_b
-
-    if zr_a_c > 0.0 and zr_b_c > 0.0:
-        zr_b_10_c = 10.0 * zr_b_c
-        zr_c_c = -math.log10(zr_a_c) / zr_b_c
-
+        conv_dbzlim = 10.0 * math.log10(zr_a * (R ** zr_b))
+        
     #Convert dBZ to rain rate RR
     idx = dbz < conv_dbzlim
-    rr = np.where(idx, 10 ** (dbz / (zr_b_10) + zr_c), 10 ** (dbz / (zr_b_10_c) + zr_c_c))
+    rr = np.where(idx, 10 ** (dbz / (10 * zr_b) + (-math.log10(zr_a) / zr_b)), 10 ** (dbz / (10 * zr_b_c) + (-math.log10(zr_a_c) / zr_b_c)))
 
     return rr
 
@@ -66,7 +58,7 @@ def dBZtoSR(dbz, coef):
 
     Keyword arguments:
     dbz -- Array of dBZ values
-    coef -- dictionary containing Z(R) A and B coefficients zr_a, zr_b, zr_a_c and zr_a_c (c for convective rain)
+    coef -- dictionary containing Z(R) A and B coefficients
 
     Return:
     sr -- snow rate
@@ -75,12 +67,7 @@ def dBZtoSR(dbz, coef):
     zs_a = coef['zs_a']
     zs_b = coef['zs_b']
 
-    #Help coefficients for snow
-    zs_b_10 = zs_b_10_c = 10.0 * zs_b
-    zs_c = zs_c_c = -math.log10(zs_a) / zs_b
-
-    #Convert dBZ to snow rate SR
-    sr = dbz / zs_b_10 + zs_c
+    sr = 10 ** (dbz / (10 * zs_b) + (-math.log10(zs_a) / zs_b))
 
     return sr
 

@@ -113,12 +113,12 @@ def convert_dtype(accumulated_image, output_conf, nodata_mask, undetect_mask):
     Return:
     scaled_image_new_dtype --
 
-    """    
+    """
     scaled_image = (accumulated_image - output_conf['offset']) / output_conf['gain']
     scaled_image[nodata_mask] = output_conf['nodata']
     scaled_image[undetect_mask] = output_conf['undetect']
     scaled_image_new_dtype = scaled_image.astype(output_conf['dtype'])
-
+    
     return scaled_image_new_dtype
 
 

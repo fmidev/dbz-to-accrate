@@ -4,7 +4,7 @@
 	"zr_b": 1.53,
 	"zr_a_c": 223.0,
 	"zr_b_c": 1.43,
-	"zs_a": 115.0,
+	"zs_a": 115,
 	"zs_b": 1.35
     },
     "input": {
@@ -33,7 +33,7 @@
 	"dtype": "uint16",
 	"gain": 0.001,
 	"offset": 0,
-	"nodata": 65535,
+	"nonp.iinfo(np.int32)data": 65535,
 	"undetect": 0
     }
 }
