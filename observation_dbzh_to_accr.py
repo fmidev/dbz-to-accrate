@@ -73,7 +73,8 @@ def run(timestamp, config):
     outdir = output_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])
     print('outdir:', outdir)
     Path(outdir).mkdir(parents=True, exist_ok=True)
-    outfile = f"{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])}"
+    #outfile = f"{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])}"
+    outfile = f"""{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}')}"""
     startdate = first_timestamp[0:8]
     starttime = first_timestamp[8:14]
     enddate = f"{second_timestamp[0:8]}00"
