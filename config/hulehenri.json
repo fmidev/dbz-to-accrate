@@ -10,7 +10,7 @@
     "input": {
 	"filetype": "forecast",
 	"dir": "/input",
-	"filename": "{timestamp}_{fc_timestamp}_nclen={fc_timestep}min_radar.fmippn.det_conf={config}.h5",
+	"filename": "{timestamp}_{fc_timestamp}_radar.fmippn.det_conf={config}.h5",
 	"timeres": 1,
 	"fc_len": 240
     },
@@ -24,7 +24,7 @@
     },
     "output": {
 	"dir": "/output",
-	"filename": "{timestamp}_{fc_timestamp}_nclen={fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
+	"filename": "{timestamp}_{fc_timestamp}_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
 	"write_acrr_from_start": false,
 	"write_acrr_fixed_step": true,
 	"write_acrr_fixed_step_2": true,

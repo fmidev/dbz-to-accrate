@@ -14,8 +14,8 @@ def run(timestamp, config):
 
     # Read first file and convert to rate to initiate sum array and output file_dict
     first_timestep = input_conf['timeres']
-    second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M')
-    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=timestamp, fc_timestamp=second_timestamp, fc_timestep=f'{first_timestep:03}', config=config)
+    second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M%S')
+    first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=f'{timestamp}00', fc_timestamp=second_timestamp, config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     print("gain, offset, nodata, undetect ", gain, offset, nodata, undetect)
     nodata_mask_first = (first_image_array == nodata)
@@ -51,8 +51,8 @@ def run(timestamp, config):
     for timestep in range(input_conf['timeres'], input_conf['fc_len']+1, input_conf['timeres']):
 
         # Input file
-        second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M')
-        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', config=config)
+        second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=timestep)).strftime('%Y%m%d%H%M%S')
+        input_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, config=config)
 
         # Read image array hdf5's and convert dbzh to rain rate (mm/timeresolution)
         image_array, quantity, fc_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(input_file)
@@ -90,7 +90,7 @@ def run(timestamp, config):
                 print("After dtype conversion: np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]): ", np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]))
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep"]:03}', config = config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, acc_timestep = f'{output_conf["timestep"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -123,7 +123,7 @@ def run(timestamp, config):
                 write_acc_rate_fixed_timestep_2 = utils.convert_dtype(write_acc_rate_fixed_timestep_2, output_conf, nodata_mask, undetect_mask)
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{output_conf["timestep_2"]:03}', config = config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, acc_timestep = f'{output_conf["timestep_2"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -151,7 +151,7 @@ def run(timestamp, config):
 
                 write_acc_rate_from_start = utils.convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
 
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, fc_timestep = f'{timestep:03}', acc_timestep = f'{timestep:03}', config=config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp, acc_timestep = f'{timestep:03}', config=config)
 
                 startdate = startdate_first
                 starttime = starttime_first
