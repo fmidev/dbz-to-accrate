@@ -90,7 +90,7 @@ def run(timestamp, config):
                 print("After dtype conversion: np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]): ", np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]))
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:14], acc_timestep = f'{output_conf["timestep"]:03}', config = config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:12], acc_timestep = f'{output_conf["timestep"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -123,7 +123,7 @@ def run(timestamp, config):
                 write_acc_rate_fixed_timestep_2 = utils.convert_dtype(write_acc_rate_fixed_timestep_2, output_conf, nodata_mask, undetect_mask)
 
                 #Write to file
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:14], acc_timestep = f'{output_conf["timestep_2"]:03}', config = config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:12], acc_timestep = f'{output_conf["timestep_2"]:03}', config = config)
                 enddate = fc_timestamp[0:8]
                 endtime = fc_timestamp[8:14]
                 date = enddate
@@ -151,7 +151,7 @@ def run(timestamp, config):
 
                 write_acc_rate_from_start = utils.convert_dtype(write_acc_rate_from_start, output_conf, nodata_mask, undetect_mask)
 
-                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:14], acc_timestep = f'{timestep:03}', config=config)
+                outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:12], acc_timestep = f'{timestep:03}', config=config)
 
                 startdate = startdate_first
                 starttime = starttime_first
