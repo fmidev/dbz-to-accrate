@@ -6,8 +6,9 @@ dependencies:
   - numpy
   - pyproj
   - git
-  - scipy
   - h5py
   - pip
+  - pysteps
+  - opencv
   - pip:
       - git+https://github.com/karjaljo/hiisi.git

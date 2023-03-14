@@ -1,6 +1,5 @@
 FROM ubuntu:20.04
 
-
 # Install conda
 RUN apt-get -qq update && apt-get -qq -y install curl bzip2 libgl1-mesa-glx \
     && curl -sSL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
@@ -19,6 +18,13 @@ ENV PYTHONDONTWRITEBYTECODE=true
 RUN conda install -c conda-forge mamba && \
     mamba env create -f environment.yml -n fmippn_dbzhtorate && \
     mamba clean --all -f -y
+
+RUN conda init bash
+
+# Allow environment to be activated
+RUN echo "conda activate fmippn_dbzhtorate" >> ~/.profile
+ENV PATH /opt/conda/envs/fmippn_dbzhtorate/bin:$PATH
+ENV CONDA_DEFAULT_ENV fmippn_dbzhtorate
 
 # Workdir and input/output/log dir
 WORKDIR .
