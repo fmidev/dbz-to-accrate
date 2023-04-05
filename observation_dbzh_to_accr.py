@@ -26,9 +26,6 @@ def run(timestamp, config):
         first_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=first_timestamp)}"
         second_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=second_timestamp)}"
 
-    print('first_file: ', first_file)
-    print('second_file: ', second_file)
-
     first_image_array, quantity, first_timestamp_odim, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
     second_image_array, quantity, second_timestamp_odim, gain, offset, nodata, undetect = utils.read_hdf5(second_file)
     nodata_mask_first = (first_image_array == nodata)
@@ -71,7 +68,6 @@ def run(timestamp, config):
     
     #Write to file
     outdir = output_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])
-    print('outdir:', outdir)
     Path(outdir).mkdir(parents=True, exist_ok=True)
     #outfile = f"{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])}"
     outfile = f"""{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}')}"""
@@ -81,7 +77,6 @@ def run(timestamp, config):
     endtime = f"{second_timestamp[8:14]}00"
     date = enddate
     time = endtime
-    print('date: ',enddate,' time: ',endtime)
     utils.write_accumulated_h5(outfile, acc_rate, file_dict_accum, date, time, startdate, starttime, enddate, endtime, output_conf)
 
 

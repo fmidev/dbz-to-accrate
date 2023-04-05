@@ -25,7 +25,7 @@
     "output": {
 	"dir": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
 	"timeres": 5,
-	"filename": "{timestamp}_radar.rack.comp.accrate.{timeres}min_CONF=HULEHENRI.h5",
+	"filename": "{timestamp}_radar.rack.comp.accrate.{timeres}min_conf=hulehenri.h5",
 	"dtype": "uint16",
 	"gain": 0.001,
 	"offset": 0,

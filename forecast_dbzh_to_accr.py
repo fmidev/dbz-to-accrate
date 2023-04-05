@@ -17,7 +17,6 @@ def run(timestamp, config):
     second_timestamp = (timestamp_formatted + datetime.timedelta(minutes=first_timestep)).strftime('%Y%m%d%H%M%S')
     first_file = input_conf['dir'] + '/' + input_conf['filename'].format(timestamp=f'{timestamp}00', fc_timestamp=second_timestamp, config=config)
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
-    print("gain, offset, nodata, undetect ", gain, offset, nodata, undetect)
     nodata_mask_first = (first_image_array == nodata)
     undetect_mask_first = (first_image_array == undetect)
 
@@ -27,8 +26,6 @@ def run(timestamp, config):
 
     # Calculate look up table (lut) for dBZ -> rate conversion.
     lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(input_conf['timeres'], coef, nodata, undetect, gain, offset)
-
-    print("np.min(lut_rr), np.min(lut_sr)", np.min(lut_rr), np.min(lut_sr))
 
     # Init arrays
     file_dict_accum = utils.init_filedict_accumulation(first_file)
@@ -80,14 +77,7 @@ def run(timestamp, config):
                 nodata_mask = ~np.isfinite(acc_rate_fixed_timestep)
                 undetect_mask = (acc_rate_fixed_timestep == 0)
                 write_acc_rate_fixed_timestep = acc_rate_fixed_timestep
-
-                print("Before dtype conversion: np.nanmin(write_acc_rate_fixed_timestep): ", np.nanmin(write_acc_rate_fixed_timestep))
-                print("Before dtype conversion: np.nanmax(write_acc_rate_fixed_timestep): ", np.nanmax(write_acc_rate_fixed_timestep))
-
                 write_acc_rate_fixed_timestep = utils.convert_dtype(write_acc_rate_fixed_timestep, output_conf, nodata_mask, undetect_mask)
-
-                print("After dtype conversion: np.min(write_acc_rate_fixed_timestep): ", np.min(write_acc_rate_fixed_timestep))
-                print("After dtype conversion: np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]): ", np.max(write_acc_rate_fixed_timestep[(write_acc_rate_fixed_timestep > 0) & (write_acc_rate_fixed_timestep < 65535)]))
 
                 #Write to file
                 outfile = output_conf['dir'] + '/' + output_conf['filename'].format(timestamp = timestamp, fc_timestamp = second_timestamp[0:12], acc_timestep = f'{output_conf["timestep"]:03}', config = config)
