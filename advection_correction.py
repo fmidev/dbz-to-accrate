@@ -11,6 +11,7 @@ https://pysteps.readthedocs.io/en/latest/auto_examples/advection_correction.html
 
 """
 
+
 def advection_correction(R, T=5, t=1):
     """
     R = np.array([qpe_previous, qpe_current])
@@ -22,7 +23,7 @@ def advection_correction(R, T=5, t=1):
     oflow_method = motion.get_method("LK")
     fd_kwargs = {"buffer_mask": 10}  # avoid edge effects
     V = oflow_method(np.log(R), fd_kwargs=fd_kwargs)
-    
+
     # Perform temporal interpolation
     Rd = np.zeros((R[0].shape))
     x, y = np.meshgrid(
@@ -30,9 +31,8 @@ def advection_correction(R, T=5, t=1):
     )
 
     interpolated_frames = []
-    
+
     for i in range(t, T + t, t):
-        
         pos1 = (y - i / T * V[1], x - i / T * V[0])
         # order=3: cubic interpolation, order=1: linear interpolation
         R1 = map_coordinates(R[0], pos1, order=1)
@@ -40,7 +40,7 @@ def advection_correction(R, T=5, t=1):
         pos2 = (y + (T - i) / T * V[1], x + (T - i) / T * V[0])
         R2 = map_coordinates(R[1], pos2, order=1)
 
-        interp = ((T - i) * R1 + i * R2)/T       
+        interp = ((T - i) * R1 + i * R2) / T
         interpolated_frames.append(interp)
-        
+
     return interpolated_frames
