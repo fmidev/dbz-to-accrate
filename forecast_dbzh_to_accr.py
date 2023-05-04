@@ -40,7 +40,7 @@ def run(timestamp, config):
 
     # Read probability of snow from file. Use 5 minutes earlier
     # timestamp if newest file has not yet arrived. 
-    snowprob_file = f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=timestamp_formatted.strftime('%Y%m%d%H%M')}"
+    snowprob_file = f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=timestamp_formatted.strftime('%Y%m%d%H%M'))}"
     
     if not os.path.isfile(snowprob_file):
         earlier_timestamp = (timestamp_formatted - datetime.timedelta(minutes=5).strftime("%Y%m%d%H%M"))
