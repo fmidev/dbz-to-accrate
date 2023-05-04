@@ -51,12 +51,13 @@ def run(timestamp, config):
     undetect_mask_first = first_image_array == undetect
     nodata_mask_second = second_image_array == nodata
     undetect_mask_second = second_image_array == undetect
-
-    # Read probability of snow in array from file
+    
+    # Read probability of snow in array from file. Use snow probability
+    # file of first timestamp to avoid having to wait for newer data.    
     snowprob_file = (
         snowprob_conf["dir"]
         + "/"
-        + snowprob_conf["filename"].format(timestamp=timestamp)
+        + snowprob_conf["filename"].format(timestamp=first_timestamp)
     )
     (
         snowprob,

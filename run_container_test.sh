@@ -23,12 +23,13 @@ echo INPATH: $INPATH
 echo OUTPATH: $OUTPATH
 echo LOGPATH: $LOGPATH
 
-#Mkdirs if log and outpaths have been cleaned                                                                                                           
+#Mkdirs if log and outpaths have been cleaned
 mkdir -p $OUTPATH
 mkdir -p $LOGPATH
 
 # Run
-docker run \
+docker run -it \
+    --entrypoint /bin/bash \
        --env "timestamp=$TIMESTAMP" \
        --env "config=$CONFIG" \
        --mount type=bind,source=/tutka,target=/tutka \
@@ -41,4 +42,4 @@ docker run \
        --mount type=bind,source="$(pwd)"/observation_dbzh_to_accr.py,target=/observation_dbzh_to_accr.py \
        --mount type=bind,source="$(pwd)"/forecast_dbzh_to_accr.py,target=/forecast_dbzh_to_accr.py \
        --mount type=bind,source="$(pwd)"/utils.py,target=/utils.py \
-       dbzh_to_acc_rate:latest
+       quay.io/fmi/dbz-to-accrate:94e7093
