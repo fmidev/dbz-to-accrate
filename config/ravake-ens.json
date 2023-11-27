@@ -45,5 +45,9 @@
     "filetype": "motion",
     "dir": "/input",
     "filename": "{timestamp}_radar.fmippn.motion-ensmem={ensno}_conf={config}.h5"
+  },
+  "multiprocessing": {
+    "scheduler": "threads",
+    "num_workers": 4
   }
 }

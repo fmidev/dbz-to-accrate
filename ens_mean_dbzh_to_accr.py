@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import logging
 
+import dask
+
 from pysteps import motion
 
 import dbzh_to_rate
@@ -32,7 +34,15 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
     return arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr, lut_sr
 
 
-def interpolate_and_sum(arr1, arr2, motion_field, conf):
+@dask.delayed
+def interpolate_and_sum(arr1, arr2, conf):
+    # Calculate advection correction
+
+    oflow_method = motion.get_method("LK")
+    fd_kwargs = {"buffer_mask": 10}  # avoid edge effects
+    # NOTE: this line takes ~30% of the total runtime
+    motion_field = oflow_method(np.log(np.stack([arr1, arr2])), fd_kwargs=fd_kwargs)
+
     # Calculate advection correction
     interp_frames = advection_correction.advection_correction_with_motion(
         np.array([arr1, arr2]),
@@ -122,6 +132,7 @@ def run(timestamp, config, configpath="/config"):
             inclusive="both",
         ).to_pydatetime()
 
+        delayed_arrays = {}
         for tt in obstimes:
             logging.info(f"Processing observation {tt}")
             file = Path(conf["observations"]["dir"]) / conf["observations"]["filename"].format(
@@ -140,15 +151,15 @@ def run(timestamp, config, configpath="/config"):
                 arr1 = data_arrays[1][tt - timedelta(minutes=timestep)]
                 arr2 = data_arrays[1][tt]
 
-                oflow_method = motion.get_method("LK")
-                fd_kwargs = {"buffer_mask": 10}  # avoid edge effects
-                # NOTE: this line takes ~30% of the total runtime
-                motion_field = oflow_method(np.log(np.stack([arr1, arr2])), fd_kwargs=fd_kwargs)
-
                 # Calculate advection correction
-                arr = interpolate_and_sum(arr1, arr2, motion_field, conf)
+                delayed_arrays[tt] = interpolate_and_sum(arr1, arr2, conf)
+
+        # Run dask computation
+        logging.info("Running dask interpolation for observations")
+        arrays = dask.compute(delayed_arrays, **conf["multiprocessing"])[0]
+        for tt in obstimes[1:]:
             for ensno in range(1, conf["input"]["n_ens_members"] + 1):
-                interp_arrays[ensno][tt] = arr
+                interp_arrays[ensno][tt] = arrays[tt]
 
             try:
                 del data_arrays[1][tt - timedelta(minutes=timestep)]
