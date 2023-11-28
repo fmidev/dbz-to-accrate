@@ -16,7 +16,7 @@ import advection_correction
 
 
 def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=None):
-    arr, qty, tstamp, gain, offset, nodata, undetect = utils.read_hdf5(file)
+    arr, qty, tstamp, gain, offset, nodata, undetect = utils.read_hdf5(file, qty="DBZH")
     # Convert to rain rate
     nodata_mask = arr == nodata
     undetect_mask = arr == undetect
@@ -83,7 +83,7 @@ def run(timestamp, config):
     first_file = input_path / conf["observations"]["filename"].format(
         timestamp=f"{timestamp}",
     )
-    first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(first_file)
+        first_file, qty="DBZH"
     nodata_mask_first = first_image_array == nodata
     undetect_mask_first = first_image_array == undetect
 
