@@ -56,13 +56,21 @@ def interpolate_and_sum(arr1, arr2, conf):
     return arr
 
 
-def run(timestamp, config, configpath="/config"):
-    # TODO
-    # - no data mask
-    # - undetect mask
-    # - lumitodennäköisyyden huomiointi
-    # - kertymän laskenta tasatunneittain havainnot huomoiden
+def run(timestamp, config):
+    """
+    Run the accumulation calculation process.
 
+    TODO:
+    - take into account the snow probability when converting dBZ to rain rate
+
+    Args:
+        timestamp (str): The timestamp in the format "%Y%m%d%H%M".
+        config (str): The name of the configuration file.
+
+    Returns:
+        None
+
+    """
     # Read config file
     config_file = f"/config/{config}.json"
     # coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(config_file)
@@ -226,7 +234,6 @@ def run(timestamp, config, configpath="/config"):
         R0 = advection_correction.interpolate_ensemble(adv_arrs_1, adv_arrs_2, motion_fields[ensno])
 
         # Extract interpolated frames
-        interp_arrays[ensno] = {}
         for i, lt in enumerate(leadtimes):
             interp_arrays[ensno][lt] = R0[i]
 
@@ -241,6 +248,8 @@ def run(timestamp, config, configpath="/config"):
     for end in accumulation_times:
         start = end - timedelta(minutes=accumulation_timestep)
         accrs = {}
+        nodata_masks = {}
+        undetect_masks = {}
         logging.info(f"Processing accumulation timestep {start}")
 
         for ensno_ in range(1, conf["input"]["n_ens_members"] + 1):
@@ -250,20 +259,36 @@ def run(timestamp, config, configpath="/config"):
             # TODO if this is too low, we should reject the accumulation as invalid
             keys_in_interval = [k for k in interp_arrays[ensno_].keys() if k > start and k <= end]
             logging.debug(f"No of keys in interval: {len(keys_in_interval)}")
+            if len(keys_in_interval) < accumulation_timestep / timestep:
+                logging.warning(
+                    f"Skipping ensemble member {ensno_}, only {len(keys_in_interval)} timesteps in interval"
+                )
+                continue
+
+            # Get accumulation
             arrs = [interp_arrays[ensno_][k] for k in keys_in_interval]
             accrs[ensno_] = np.nansum(arrs, axis=0)
 
+            # Get nodata and undetect masks
+            nodata_arrs = [np.isnan(interp_arrays[ensno_][k]) for k in keys_in_interval]
+            undetect_arrs = [interp_arrays[ensno_][k] == 0 for k in keys_in_interval]
+            # TODO figure out if here should be any() or all()
+            nodata_masks[ensno_] = np.any(nodata_arrs, axis=0)
+            undetect_masks[ensno_] = np.all(undetect_arrs, axis=0)
+
         # Ensemble mean for the accumulation
         ens_mean = np.nanmean([accrs[k] for k in accrs.keys()], axis=0)
+        ens_nodata_mask = np.all([nodata_masks[k] for k in accrs.keys()], axis=0)
+        ens_undetect_mask = np.all([undetect_masks[k] for k in accrs.keys()], axis=0)
         ens_mean_ = utils.convert_dtype(
             ens_mean,
             conf["output"],
-            nodata_mask,
-            undetect_mask,
+            ens_nodata_mask,
+            ens_undetect_mask,
         )
 
         # Write accumulation to file
-        outfile = (
+        outfile = Path(
             conf["output"]["dir"]
             + "/"
             + conf["output"]["filename"].format(
@@ -290,6 +315,50 @@ def run(timestamp, config, configpath="/config"):
             enddate,
             endtime,
             conf["output"],
+        )
+
+        # Write nodata and undetect masks to file
+        nodata_outfile = outfile.parent / (outfile.stem + "_nodata_mask.h5")
+        ens_nodata_mask_ = utils.convert_dtype(
+            ens_nodata_mask,
+            conf["nodata_output"],
+            ens_nodata_mask,
+            ens_undetect_mask,
+        )
+
+        utils.write_accumulated_h5(
+            nodata_outfile,
+            ens_nodata_mask_,
+            file_dict_accum,
+            enddate,
+            endtime,
+            startdate,
+            starttime,
+            enddate,
+            endtime,
+            conf["nodata_output"],
+            quantity="nodata_mask",
+        )
+
+        undetect_outfile = outfile.parent / (outfile.stem + "_undetect_mask.h5")
+        ens_undetect_mask_ = utils.convert_dtype(
+            ens_undetect_mask,
+            conf["undetect_output"],
+            ens_nodata_mask,
+            ens_undetect_mask,
+        )
+        utils.write_accumulated_h5(
+            undetect_outfile,
+            ens_undetect_mask_,
+            file_dict_accum,
+            enddate,
+            endtime,
+            startdate,
+            starttime,
+            enddate,
+            endtime,
+            conf["undetect_output"],
+            quantity="undetect_mask",
         )
 
 

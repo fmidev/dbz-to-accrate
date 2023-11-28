@@ -221,6 +221,7 @@ def write_accumulated_h5(
     enddate,
     endtime,
     output_conf,
+    quantity="ACRR",
 ):
     """Write accumulated precipitation rate to ODIM hdf5 file.
 
@@ -252,7 +253,7 @@ def write_accumulated_h5(
         "nodata": output_conf["nodata"],
         "offset": output_conf["offset"],
         "product": np.string_("COMP"),
-        "quantity": np.string_("ACRR"),
+        "quantity": np.string_(quantity),
         "undetect": output_conf["undetect"],
         "startdate": startdate,
         "starttime": starttime,
