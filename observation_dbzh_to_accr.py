@@ -37,7 +37,7 @@ def run(timestamp, config):
         offset,
         nodata,
         undetect,
-    ) = utils.read_hdf5(first_file)
+    ) = utils.read_hdf5(first_file, qty="DBZH")
     (
         second_image_array,
         quantity,
@@ -46,7 +46,7 @@ def run(timestamp, config):
         offset,
         nodata,
         undetect,
-    ) = utils.read_hdf5(second_file)
+    ) = utils.read_hdf5(second_file, qty="DBZH")
     nodata_mask_first = first_image_array == nodata
     undetect_mask_first = first_image_array == undetect
     nodata_mask_second = second_image_array == nodata
@@ -67,7 +67,7 @@ def run(timestamp, config):
         snowprob_offset,
         snowprob_nodata,
         snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file)
+    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
 
     # Calculate look up tables (lut) for dBZ -> rate conversion.
     lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(

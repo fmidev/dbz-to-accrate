@@ -50,15 +50,16 @@ def read_conf(config_file):
     return data
 
 
-def read_hdf5(image_h5_file):
+def read_hdf5(image_h5_file, qty="DBZH"):
     """Read image array from ODIM hdf5 file.
 
     Keyword arguments:
-    image_h5_file -- ODIM hdf5 file containing DBZH or RATE array
+    image_h5_file -- ODIM hdf5 file
+    qty -- array quantity that is read
 
     Return:
     image_array -- numpy array containing DBZH or RATE array
-    quantity -- array quantity, either 'DBZH' or 'RATE'
+    quantity -- array quantity
     timestamp -- timestamp of image_array
     mask_nodata -- masked array where image_array has nodata value
     gain -- gain of image_array
@@ -69,26 +70,14 @@ def read_hdf5(image_h5_file):
     # Read RATE or DBZH from hdf5 file
     logging.info(f"Extracting data from {image_h5_file} file")
     comp = hiisi.OdimCOMP(image_h5_file, "r")
-    # Read RATE array if found in dataset
-    test = comp.select_dataset("DBZH")
+
+    test = comp.select_dataset(qty)
     if test is not None:
         image_array = comp.dataset
-        quantity = "DBZH"
+        quantity = qty
     else:
-        # Look for RATE array
-        test = comp.select_dataset("RATE")
-        if test is not None:
-            image_array = comp.dataset
-            quantity = "RATE"
-        else:
-            # Look for SNOWPROB array
-            test = comp.select_dataset("SNOWPROB")
-            if test is not None:
-                image_array = comp.dataset
-                quantity = "SNOWPROB"
-            else:
-                logging.error(f"DBZH, RATE or SNOWPROB array not found in the file {image_h5_file}!")
-                sys.exit(1)
+        logging.error(f"{qty} array not found in the file {image_h5_file}!")
+        raise ValueError(f"{qty} array not found in the file {image_h5_file}!")
 
     # Read nodata and undetect values from metadata for masking
     gen = comp.attr_gen("nodata")
