@@ -134,7 +134,7 @@ def run(timestamp, config, configpath="/config"):
 
         delayed_arrays = {}
         for tt in obstimes:
-            logging.info(f"Processing observation {tt}")
+            logging.info(f"Reading observation {tt}")
             file = Path(conf["observations"]["dir"]) / conf["observations"]["filename"].format(
                 timestamp=f"{tt:%Y%m%d%H%M}",
             )
@@ -167,20 +167,6 @@ def run(timestamp, config, configpath="/config"):
                 pass
 
     motion_fields = {}
-    # For each ensemble member
-    for ensno in range(1, conf["input"]["n_ens_members"] + 1):
-        logging.info(f"Reading motion field for ensemble member {ensno}/{conf['input']['n_ens_members']}")
-        # Read motion field for this ensemble member
-        motion_file = Path(conf["motion"]["dir"]) / conf["motion"]["filename"].format(
-            timestamp=f"{timestamp}00",
-            ensno=ensno,
-            config=config,
-        )
-        motion_field, motion_timestep, motion_kmperpixel = utils.read_motion_hdf5(motion_file)
-        motion_fields[ensno] = utils._convert_motion_units_ms2pix(
-            motion_field, kmperpixel=motion_timestep, timestep=motion_kmperpixel
-        )
-
     # Calculate advection correction for each ensemble member
     for ensno in range(1, conf["input"]["n_ens_members"] + 1):
         logging.info(f"Processing ensemble member {ensno}/{conf['input']['n_ens_members']}")
