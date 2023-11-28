@@ -110,12 +110,28 @@ def run(timestamp, config, configpath="/config"):
     ).to_pydatetime()
 
     accumulation_timestep = conf["output"]["timestep"]
-    accumulation_times = pd.date_range(
-        start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
-        end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
-        freq=f"{accumulation_timestep}min",
-        inclusive="right",
-    ).to_pydatetime()
+
+    if conf["output"]["write_acrr_fixed_step"]:
+        accumulation_times_fixed = pd.date_range(
+            start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
+            end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
+            freq=f"{accumulation_timestep}min",
+            inclusive="right",
+        ).to_pydatetime()
+    else:
+        accumulation_times_fixed = np.array([])
+    if conf["output"]["write_acrr_from_start"]:
+        accumulation_times_from_start = pd.date_range(
+            start=curdate,
+            end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
+            freq=f"{accumulation_timestep}min",
+            inclusive="right",
+        ).to_pydatetime()
+    else:
+        accumulation_times_from_start = np.array([])
+
+    accumulation_times = np.unique(np.concatenate([accumulation_times_fixed, accumulation_times_from_start]))
+    accumulation_times.sort()
 
     data_arrays = {i: {curdate: first_arr} for i in range(1, conf["input"]["n_ens_members"] + 1)}
     nodata_masks = {i: {curdate: nodata_mask_first} for i in range(1, conf["input"]["n_ens_members"] + 1)}
