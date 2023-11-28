@@ -7,6 +7,8 @@ import json
 import matplotlib.pyplot as plt
 import logging
 import sys
+import pandas as pd
+from datetime import timedelta
 
 
 def read_config(config_file):
@@ -174,6 +176,27 @@ def convert_dtype(accumulated_image, output_conf, nodata_mask, undetect_mask):
     return scaled_image_new_dtype
 
 
+def unpack_dtype(scaled_image, output_conf):
+    """Unpack scaled data to original dtype
+
+    Keyword arguments:
+    scaled_image --
+    output_conf --
+
+    Return:
+    unpacked_image --
+
+    """
+    nodata_mask = scaled_image == output_conf["nodata"]
+    undetect_mask = scaled_image == output_conf["undetect"]
+    unpacked_image = scaled_image * output_conf["gain"] + output_conf["offset"]
+
+    unpacked_image[nodata_mask] = np.nan
+    unpacked_image[undetect_mask] = 0
+
+    return unpacked_image, nodata_mask, undetect_mask
+
+
 def init_filedict_accumulation(image_h5_file):
     """Copy common metadata from input file to be used as
     output file template.
@@ -301,3 +324,41 @@ def _convert_motion_units_ms2pix(data_ms, kmperpixel=1.0, timestep=1.0):
     seconds_in_timestep = timestep * 60
     data_pxts = data_ms * (1 / meters_per_pixel) * seconds_in_timestep
     return data_pxts
+
+
+def determine_accumulation_times(curdate, conf):
+    """
+    Determine the accumulation times for a given date.
+
+    Args:
+        curdate (datetime): The current date.
+        conf (dict): The configuration settings.
+
+    Returns:
+        numpy.ndarray: An array of accumulation times.
+
+    """
+    accumulation_timestep = conf["output"]["timestep"]
+
+    if conf["output"]["write_acrr_fixed_step"]:
+        accumulation_times_fixed = pd.date_range(
+            start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
+            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
+            freq=f"{accumulation_timestep}min",
+            inclusive="right",
+        ).to_pydatetime()
+    else:
+        accumulation_times_fixed = np.array([])
+    if conf["output"]["write_acrr_from_start"]:
+        accumulation_times_from_start = pd.date_range(
+            start=curdate,
+            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
+            freq=f"{accumulation_timestep}min",
+            inclusive="right",
+        ).to_pydatetime()
+    else:
+        accumulation_times_from_start = np.array([])
+
+    accumulation_times = np.unique(np.concatenate([accumulation_times_fixed, accumulation_times_from_start]))
+    accumulation_times.sort()
+    return accumulation_times
