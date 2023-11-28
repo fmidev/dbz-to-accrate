@@ -47,7 +47,7 @@ def interpolate_and_sum(arr1, arr2, conf):
     interp_frames = advection_correction.advection_correction_with_motion(
         np.array([arr1, arr2]),
         motion_field,
-        T=conf["input"]["timeres"],
+        T=conf["ensemble_input"]["timeres"],
         t=conf["interp"]["timeres"],
     )
 
@@ -78,7 +78,7 @@ def run(timestamp, config):
     curdate = datetime.strptime(timestamp, "%Y%m%d%H%M")
 
     # Read first file to initialize sum array and output file_dict
-    timestep = conf["input"]["timeres"]
+    timestep = conf["ensemble_input"]["timeres"]
     input_path = Path(conf["observations"]["dir"])
     first_file = input_path / conf["observations"]["filename"].format(
         timestamp=f"{timestamp}",
@@ -112,7 +112,7 @@ def run(timestamp, config):
 
     leadtimes = pd.date_range(
         start=curdate,
-        end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
+        end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
         freq=f"{timestep}min",
         inclusive="right",
     ).to_pydatetime()
@@ -122,7 +122,7 @@ def run(timestamp, config):
     if conf["output"]["write_acrr_fixed_step"]:
         accumulation_times_fixed = pd.date_range(
             start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
-            end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
+            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
             freq=f"{accumulation_timestep}min",
             inclusive="right",
         ).to_pydatetime()
@@ -131,7 +131,7 @@ def run(timestamp, config):
     if conf["output"]["write_acrr_from_start"]:
         accumulation_times_from_start = pd.date_range(
             start=curdate,
-            end=curdate + timedelta(minutes=conf["input"]["fc_len"]),
+            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
             freq=f"{accumulation_timestep}min",
             inclusive="right",
         ).to_pydatetime()
@@ -141,10 +141,10 @@ def run(timestamp, config):
     accumulation_times = np.unique(np.concatenate([accumulation_times_fixed, accumulation_times_from_start]))
     accumulation_times.sort()
 
-    data_arrays = {i: {curdate: first_arr} for i in range(1, conf["input"]["n_ens_members"] + 1)}
-    nodata_masks = {i: {curdate: nodata_mask_first} for i in range(1, conf["input"]["n_ens_members"] + 1)}
-    undetect_masks = {i: {curdate: undetect_mask_first} for i in range(1, conf["input"]["n_ens_members"] + 1)}
-    interp_arrays = {i: {} for i in range(1, conf["input"]["n_ens_members"] + 1)}
+    data_arrays = {i: {curdate: first_arr} for i in range(1, conf["ensemble_input"]["n_ens_members"] + 1)}
+    nodata_masks = {i: {curdate: nodata_mask_first} for i in range(1, conf["ensemble_input"]["n_ens_members"] + 1)}
+    undetect_masks = {i: {curdate: undetect_mask_first} for i in range(1, conf["ensemble_input"]["n_ens_members"] + 1)}
+    interp_arrays = {i: {} for i in range(1, conf["ensemble_input"]["n_ens_members"] + 1)}
     # Load observations that are needed to calculate accumulations
     # if any are needed
     start = accumulation_times[0] - timedelta(minutes=accumulation_timestep)
@@ -165,7 +165,7 @@ def run(timestamp, config):
             arr, nodata_mask, undetect_mask, _, lut_rr_obs, lut_sr_obs = load_file(
                 file, timestep, conf, lut_rr_ens, lut_sr_ens, file_dict_accum=None
             )
-            for ensno in range(1, conf["input"]["n_ens_members"] + 1):
+            for ensno in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
                 data_arrays[ensno][tt] = arr
                 nodata_masks[ensno][tt] = nodata_mask
                 undetect_masks[ensno][tt] = undetect_mask
@@ -182,7 +182,7 @@ def run(timestamp, config):
         logging.info("Running dask interpolation for observations")
         arrays = dask.compute(delayed_arrays, **conf["multiprocessing"])[0]
         for tt in obstimes[1:]:
-            for ensno in range(1, conf["input"]["n_ens_members"] + 1):
+            for ensno in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
                 interp_arrays[ensno][tt] = arrays[tt]
 
             try:
@@ -192,12 +192,12 @@ def run(timestamp, config):
 
     motion_fields = {}
     # Calculate advection correction for each ensemble member
-    for ensno in range(1, conf["input"]["n_ens_members"] + 1):
-        logging.info(f"Processing ensemble member {ensno}/{conf['input']['n_ens_members']}")
+    for ensno in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
+        logging.info(f"Processing ensemble member {ensno}/{conf['ensemble_input']['n_ens_members']}")
         # lue datat täällä niin ei mene niin paljoa muistia
         for i, lt in enumerate(leadtimes):
             # Read file
-            file = Path(conf["input"]["dir"]) / conf["input"]["filename"].format(
+            file = Path(conf["ensemble_input"]["dir"]) / conf["ensemble_input"]["filename"].format(
                 timestamp=f"{timestamp}00",
                 fc_timestamp=f"{lt:%Y%m%d%H%M}00",
                 fc_timestep=f"{timestep:03}",
@@ -212,7 +212,7 @@ def run(timestamp, config):
             nodata_masks[ensno][lt] = nodata_mask
             undetect_masks[ensno][lt] = undetect_mask
 
-        logging.info(f"Reading motion field for ensemble member {ensno}/{conf['input']['n_ens_members']}")
+        logging.info(f"Reading motion field for ensemble member {ensno}/{conf['ensemble_input']['n_ens_members']}")
         # Read motion field for this ensemble member
         motion_file = Path(conf["motion"]["dir"]) / conf["motion"]["filename"].format(
             timestamp=f"{timestamp}00",
@@ -224,7 +224,7 @@ def run(timestamp, config):
             motion_field, kmperpixel=motion_timestep, timestep=motion_kmperpixel
         )
 
-        logging.info(f"Calculating advection correction for ensemble member {ensno}/{conf['input']['n_ens_members']}")
+        logging.info(f"Calculating advection correction for ensemble member {ensno}/{conf['ensemble_input']['n_ens_members']}")
         # Stack arrays to be interpolated so that we can calculate the interpolation only once
         adv_arrs_1 = np.stack([data_arrays[ensno][lt - timedelta(minutes=timestep)] for lt in leadtimes])
         adv_arrs_2 = np.stack([data_arrays[ensno][lt] for lt in leadtimes])
@@ -252,9 +252,9 @@ def run(timestamp, config):
         undetect_masks = {}
         logging.info(f"Processing accumulation timestep {start}")
 
-        for ensno_ in range(1, conf["input"]["n_ens_members"] + 1):
+        for ensno_ in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
             # Sum 5min accumulations to accumulations of required length
-            logging.debug(f"Processing ensemble member {ensno_}/{conf['input']['n_ens_members']}")
+            logging.debug(f"Processing ensemble member {ensno_}/{conf['ensemble_input']['n_ens_members']}")
             # Get keys that are in the interval
             # TODO if this is too low, we should reject the accumulation as invalid
             keys_in_interval = [k for k in interp_arrays[ensno_].keys() if k > start and k <= end]

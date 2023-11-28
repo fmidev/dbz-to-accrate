@@ -7,7 +7,7 @@
     "zs_a": 115,
     "zs_b": 1.35
   },
-  "input": {
+  "ensemble_input": {
     "filetype": "ensemble_forecast",
     "dir": "/input",
     "filename": "{timestamp}_{fc_timestamp}_radar.fmippn.ens_conf={config}_ensmem={ensno}.h5",
