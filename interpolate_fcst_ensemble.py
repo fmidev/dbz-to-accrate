@@ -129,6 +129,7 @@ def run(timestamp, config, ensemble_members):
     interp_arrays = {i: {} for i in ensemble_members}
     # Load observations that are needed to calculate accumulations
     # if any are needed
+    first_ens_number = ensemble_members[0]
     start = accumulation_times[0] - timedelta(minutes=accumulation_timestep)
     if start < curdate:
         obstimes = pd.date_range(
@@ -154,8 +155,8 @@ def run(timestamp, config, ensemble_members):
 
             # Interpolate intermediate timesteps
             if conf["interp"]["interpolate"] and tt > obstimes[0]:
-                arr1 = data_arrays[1][tt - timedelta(minutes=timestep)]
-                arr2 = data_arrays[1][tt]
+                arr1 = data_arrays[first_ens_number][tt - timedelta(minutes=timestep)]
+                arr2 = data_arrays[first_ens_number][tt]
 
                 # Calculate advection correction
                 delayed_arrays[tt] = interpolate_and_sum(arr1, arr2, conf)
