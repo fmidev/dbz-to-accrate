@@ -127,7 +127,7 @@ def run(timestamp, config):
             nodata_arrs = [np.isnan(interp_arrs[k]) for k in keys_in_interval]
             undetect_arrs = [interp_arrs[k] == 0 for k in keys_in_interval]
             # TODO figure out if here should be any() or all()
-            nodata_masks[ensno_] = np.any(nodata_arrs, axis=0)
+            nodata_masks[ensno_] = np.all(nodata_arrs, axis=0)
             undetect_masks[ensno_] = np.all(undetect_arrs, axis=0)
 
         # Ensemble mean for the accumulation
