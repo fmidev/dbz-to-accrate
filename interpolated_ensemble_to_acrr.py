@@ -5,14 +5,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 import logging
+import sys
 
-import dask
-
-from pysteps import motion
-
-import dbzh_to_rate
 import utils
-import advection_correction
 
 
 def load_file(ensno, timestep, curdate, conf, config, file_dict_accum=None):
@@ -84,6 +79,7 @@ def run(timestamp, config):
         undetect_masks = {}
         logging.info(f"Processing accumulation timestep {start}")
 
+        missing_ensemble_members = []
         for ensno_ in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
             interp_arrs = {}
             for tt in acrr_timesteps:
@@ -109,8 +105,15 @@ def run(timestamp, config):
             # Get keys that are in the interval
             # TODO if this is too low, we should reject the accumulation as invalid
             keys_in_interval = [k for k in interp_arrs.keys() if k > start and k <= end]
+
             logging.debug(f"No of keys in interval: {len(keys_in_interval)}")
             if len(keys_in_interval) < accumulation_timestep / timestep:
+                missing_ensemble_members.append(ensno_)
+
+                if len(missing_ensemble_members) > conf["ensemble_input"]["allow_n_members_missing"]:
+                    logging.warning(f"Too many ensemble members missing, stopping accumulation calculation")
+                    sys.exit(1)
+
                 logging.warning(
                     f"Skipping ensemble member {ensno_}, only {len(keys_in_interval)} timesteps in interval"
                 )

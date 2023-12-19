@@ -13,7 +13,7 @@
     "filename": "{timestamp}_{fc_timestamp}_radar.fmippn.ens_conf={config}_ensmem={ensno}.h5",
     "timeres": 5,
     "fc_len": 140,
-    "n_ens_members": 10
+    "allow_n_members_missing": 1
   },
   "observations": {
     "filetype": "observation",
@@ -39,6 +39,33 @@
     "gain": 0.001,
     "offset": 0,
     "nodata": 65535,
+    "undetect": 0
+  },
+  "interpolation_output": {
+    "dir": "/output",
+    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.interp_conf={config}_ensmem={ensno}.h5",
+    "dtype": "uint16",
+    "gain": 0.001,
+    "offset": 0,
+    "nodata": 65535,
+    "undetect": 0
+  },
+  "nodata_output": {
+    "dir": "/output",
+    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.nodata.{acc_timestep}min_conf={config}.h5",
+    "dtype": "uint8",
+    "gain": 1,
+    "offset": 0,
+    "nodata": 255,
+    "undetect": 0
+  },
+  "undetect_output": {
+    "dir": "/output",
+    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.undetect.{acc_timestep}min_conf={config}.h5",
+    "dtype": "uint8",
+    "gain": 1,
+    "offset": 0,
+    "nodata": 255,
     "undetect": 0
   },
   "motion": {
