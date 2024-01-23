@@ -11,4 +11,4 @@ dependencies:
   - pysteps
   - opencv
   - pip:
-      - git+https://github.com/karjaljo/hiisi.git
+      - git+https://github.com/fmidev/hiisi.git
