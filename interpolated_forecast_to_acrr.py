@@ -10,7 +10,7 @@ import sys
 import utils
 
 
-def load_file(ensno, timestep, curdate, conf, config, file_dict_accum=None):
+def load_ensemble_file(ensno, timestep, curdate, conf, config, file_dict_accum=None):
     infile = Path(
         conf["interpolation_output"]["dir"]
         + "/"
@@ -30,6 +30,38 @@ def load_file(ensno, timestep, curdate, conf, config, file_dict_accum=None):
 
     # Unpack dtype
     arr, nodata_mask, undetect_mask = utils.unpack_dtype(arr, conf["interpolation_output"])
+
+    if file_dict_accum is None:
+        file_dict_accum = utils.init_filedict_accumulation(infile)
+
+    return arr, nodata_mask, undetect_mask, file_dict_accum
+
+
+def load_det_file(timestep, curdate, conf, config, file_dict_accum=None):
+    infile = Path(
+        conf["deterministic_input"]["dir"]
+        + "/"
+        + conf["deterministic_input"]["filename"].format(
+            timestamp=f"{curdate:%Y%m%d%H%M}00",
+            fc_timestep=f"{(timestep - curdate).total_seconds() / 60:.0f}",
+            fc_timestamp=f"{timestep:%Y%m%d%H%M}00",
+            config=config,
+        )
+    )
+    try:
+        arr, qty, tstamp, gain, offset, nodata, undetect = utils.read_hdf5(infile, qty="DBZH")
+    except FileNotFoundError:
+        logging.warning(f"File {infile} not found, skipping")
+        return None, None, None, None
+
+    # Unpack dtype
+    dtype_conf = {
+        "gain": gain,
+        "offset": offset,
+        "nodata": nodata,
+        "undetect": undetect,
+    }
+    arr, nodata_mask, undetect_mask = utils.unpack_dtype(arr, dtype_conf)
 
     if file_dict_accum is None:
         file_dict_accum = utils.init_filedict_accumulation(infile)
@@ -79,6 +111,42 @@ def run(timestamp, config):
         undetect_masks = {}
         logging.info(f"Processing accumulation timestep {start}")
 
+        # Load deterministic prediction
+        det_arrs = {}
+        for tt in acrr_timesteps:
+            # If timestep before start of deterministic prediction, read
+            # the interpolated observation from first ensemble member
+            if tt < curdate:
+                ensno_ = 1
+                arr, _, _, file_dict_accum = load_ensemble_file(
+                    ensno_,
+                    tt,
+                    curdate,
+                    conf,
+                    config,
+                    file_dict_accum=None,
+                )
+                if arr is not None:
+                    det_arrs[tt] = arr
+                if FILE_DICT_ACCUM is None:
+                    FILE_DICT_ACCUM = file_dict_accum
+                continue
+
+            import ipdb
+
+            ipdb.set_trace()
+            arr, _, _, file_dict_accum = load_det_file(
+                tt,
+                curdate,
+                conf,
+                config,
+                file_dict_accum=None,
+            )
+            if arr is not None:
+                det_arrs[tt] = arr
+            if FILE_DICT_ACCUM is None:
+                FILE_DICT_ACCUM = file_dict_accum
+
         missing_ensemble_members = []
         for ensno_ in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
             interp_arrs = {}
@@ -87,7 +155,7 @@ def run(timestamp, config):
                 # import pdb
 
                 # pdb.set_trace()
-                arr, _, _, file_dict_accum = load_file(
+                arr, _, _, file_dict_accum = load_ensemble_file(
                     ensno_,
                     tt,
                     curdate,

@@ -7,71 +7,100 @@
     "zs_a": 115,
     "zs_b": 1.35
   },
-  "ensemble_input": {
-    "filetype": "ensemble_forecast",
-    "dir": "/input",
-    "filename": "{timestamp}_{fc_timestamp}_radar.fmippn.ens_conf={config}_ensmem={ensno}.h5",
-    "timeres": 5,
-    "fc_len": 140,
-    "allow_n_members_missing": 1
-  },
-  "observations": {
-    "filetype": "observation",
-    "dir": "/ppn_input",
-    "filename": "{timestamp}_radar.rack.comp_CONF=FMIPPN-SMALL,ANDRE.h5",
-    "timeres": 5
+
+  "input": {
+    "deterministic": {
+      "data": {
+        "filetype": "deterministic_forecast",
+        "dir": "/input",
+        "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.det_conf=ravake-det.h5",
+        "timeres": 1,
+        "fc_len": 140
+      },
+      "motion": {
+        "filetype": "motion",
+        "dir": "/input",
+        "filename": "{timestamp}_radar.fmippn.motion_conf={config}.h5"
+      }
+    },
+    "ensemble": {
+      "data": {
+        "filetype": "ensemble_forecast",
+        "dir": "/input",
+        "filename": "{timestamp}00_{fc_timestamp}00_radar.fmippn.ens_conf={config}_ensmem={ensno}.h5",
+        "timeres": 5,
+        "fc_len": 140,
+        "n_ens_members": 5,
+        "allow_n_members_missing": 1
+      },
+      "motion": {
+        "filetype": "motion",
+        "dir": "/input",
+        "filename": "{timestamp}_radar.fmippn.motion-ensmem={ensno}_conf={config}.h5"
+      }
+    },
+    "observations": {
+      "data": {
+        "filetype": "observation",
+        "dir": "/ppn_input",
+        "filename": "{timestamp}_radar.rack.comp_CONF=FMIPPN-SMALL,ANDRE.h5",
+        "timeres": 5
+      }
+    },
+    "snowprob": {
+      "data": {
+        "filetype": "snowprob",
+        "dir": "/input",
+        "filename": "{timestamp}_model.harmonie.snowprob_CONF=RAVAKE.h5",
+        "timeres": 60
+      }
+    }
   },
   "interp": {
     "interpolate": true,
     "timeres": 1
   },
-  "snowprob": {
-    "dir": "/tutka/data/incoming/model/harmonie/snowprob",
-    "filename": "{timestamp}_model.harmonie.snowprob_CONF=RAVAKE.h5"
-  },
   "output": {
-    "dir": "/output",
-    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
-    "write_acrr_from_start": true,
-    "write_acrr_fixed_step": true,
-    "timestep": 60,
-    "dtype": "uint16",
-    "gain": 0.001,
-    "offset": 0,
-    "nodata": 65535,
-    "undetect": 0
-  },
-  "interpolation_output": {
-    "dir": "/output",
-    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.interp_conf={config}_ensmem={ensno}.h5",
-    "dtype": "uint16",
-    "gain": 0.001,
-    "offset": 0,
-    "nodata": 65535,
-    "undetect": 0
-  },
-  "nodata_output": {
-    "dir": "/output",
-    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.nodata.{acc_timestep}min_conf={config}.h5",
-    "dtype": "uint8",
-    "gain": 1,
-    "offset": 0,
-    "nodata": 255,
-    "undetect": 0
-  },
-  "undetect_output": {
-    "dir": "/output",
-    "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.undetect.{acc_timestep}min_conf={config}.h5",
-    "dtype": "uint8",
-    "gain": 1,
-    "offset": 0,
-    "nodata": 255,
-    "undetect": 0
-  },
-  "motion": {
-    "filetype": "motion",
-    "dir": "/input",
-    "filename": "{timestamp}_radar.fmippn.motion-ensmem={ensno}_conf={config}.h5"
+    "accumulations": {
+      "dir": "/output",
+      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.{acc_timestep}min_conf={config}.h5",
+      "write_acrr_from_start": true,
+      "write_acrr_fixed_step": true,
+      "timestep": 60,
+      "dtype": "uint16",
+      "gain": 0.001,
+      "offset": 0,
+      "nodata": 65535,
+      "undetect": 0,
+      "timeres": 5
+    },
+    "interpolation": {
+      "dir": "/output",
+      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.interp_conf={config}_ensmem={ensno}.h5",
+      "dtype": "uint16",
+      "gain": 0.001,
+      "offset": 0,
+      "nodata": 65535,
+      "undetect": 0
+    },
+    "nodata": {
+      "dir": "/output",
+      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.nodata.{acc_timestep}min_conf={config}.h5",
+      "dtype": "uint8",
+      "gain": 1,
+      "offset": 0,
+      "nodata": 255,
+      "undetect": 0
+    },
+    "undetect": {
+      "dir": "/output",
+      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.undetect.{acc_timestep}min_conf={config}.h5",
+      "dtype": "uint8",
+      "gain": 1,
+      "offset": 0,
+      "nodata": 255,
+      "undetect": 0
+    }
   },
   "multiprocessing": {
     "scheduler": "threads",

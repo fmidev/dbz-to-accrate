@@ -1,4 +1,4 @@
-"""Interpolate forecast ensemble members to 1 min timestep."""
+"""Interpolate forecast to 1 min timestep."""
 import argparse
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
 
 
 @dask.delayed
-def interpolate_and_sum(arr1, arr2, conf):
+def interpolate_and_sum(arr1, arr2, T=5, t=1):
     # Calculate advection correction
 
     oflow_method = motion.get_method("LK")
@@ -48,8 +48,8 @@ def interpolate_and_sum(arr1, arr2, conf):
     interp_frames = advection_correction.advection_correction_with_motion(
         np.array([arr1, arr2]),
         motion_field,
-        T=conf["ensemble_input"]["timeres"],
-        t=conf["ensemble_input"]["timeres"],
+        T=T,
+        t=t,
     )
 
     # Calculate 5 min accumulated rain rate
@@ -100,14 +100,16 @@ def process_observations(
         obstimes = pd.date_range(
             start=start,
             end=curdate,
-            freq=f"{conf['observations']['timeres']}min",
+            freq=f'{conf["input"]["observations"]["data"]["timeres"]}min',
             inclusive="both",
         ).to_pydatetime()
 
         delayed_arrays = {}
         for tt in obstimes:
             logging.info(f"Reading observation {tt}")
-            file = Path(conf["observations"]["dir"]) / conf["observations"]["filename"].format(
+            file = Path(conf["input"]["observations"]["data"]["dir"]) / conf["input"]["observations"]["data"][
+                "filename"
+            ].format(
                 timestamp=f"{tt:%Y%m%d%H%M}",
             )
             arr, nodata_mask, undetect_mask, file_dict_accum, _, _ = load_file(
@@ -126,7 +128,9 @@ def process_observations(
                 arr2 = data_arrays[first_ens_number][tt]
 
                 # Calculate advection correction
-                delayed_arrays[tt] = interpolate_and_sum(arr1, arr2, conf)
+                delayed_arrays[tt] = interpolate_and_sum(
+                    arr1, arr2, T=conf["input"]["observations"]["data"]["timeres"], t=conf["interp"]["timeres"]
+                )
 
         # Run dask computation
         logging.info("Running dask interpolation for observations")
@@ -141,15 +145,15 @@ def process_observations(
                 # Save interpolation array
                 arr_ = utils.convert_dtype(
                     interp_arrays[ensno][tt],
-                    conf["interpolation_output"],
+                    conf["output"]["interpolation"],
                     nodata_mask,
                     undetect_mask,
                 )
                 # Write accumulation to file
                 outfile = Path(
-                    conf["interpolation_output"]["dir"]
+                    conf["output"]["interpolation"]["dir"]
                     + "/"
-                    + conf["interpolation_output"]["filename"].format(
+                    + conf["output"]["interpolation"]["filename"].format(
                         timestamp=f"{curdate:%Y%m%d%H%M}00",
                         fc_timestep=f"{(tt - curdate).total_seconds() / 60:.0f}",
                         fc_timestamp=f"{tt:%Y%m%d%H%M}00",
@@ -172,7 +176,7 @@ def process_observations(
                     starttime,
                     enddate,
                     endtime,
-                    conf["interpolation_output"],
+                    conf["output"]["interpolation"],
                 )
 
             try:
@@ -181,7 +185,59 @@ def process_observations(
                 pass
 
 
-def run(timestamp, config, ensemble_members, only_observations=False, only_forecast=False):
+def read_motion_and_interpolate(
+    ensno, conf, input_data, config, timestamp, leadtimes, timestep, data_arrays, motion_fields
+):
+    """
+    Read motion field for the given ensemble member and interpolate the data arrays.
+
+    Parameters:
+    - ensno (int): Ensemble member number.
+    - conf (dict): Configuration dictionary.
+    - input_data (str): Input data type.
+    - config (str): Configuration name.
+    - timestamp (str): Timestamp of the motion field.
+    - leadtimes (list): List of lead times.
+    - timestep (int): Time step in minutes.
+    - data_arrays (dict): Dictionary of data arrays for each ensemble member and lead time.
+    - motion_fields (dict): Dictionary to store motion fields for each ensemble member.
+
+    Returns:
+    - R0 (ndarray): Interpolated data array.
+
+    """
+    # Read motion field for this ensemble member
+    motion_file = Path(conf["input"][input_data]["motion"]["dir"]) / conf["input"][input_data]["motion"][
+        "filename"
+    ].format(
+        timestamp=f"{timestamp}00",
+        ensno=ensno,
+        config=config,
+    )
+    motion_field, motion_timestep, motion_kmperpixel = utils.read_motion_hdf5(motion_file)
+    motion_fields[ensno] = utils._convert_motion_units_ms2pix(
+        motion_field, kmperpixel=motion_timestep, timestep=motion_kmperpixel
+    )
+
+    logging.info(f"Calculating advection correction for ensemble member {ensno}")
+    # Stack arrays to be interpolated so that we can calculate the interpolation only once
+    adv_arrs_1 = np.stack([data_arrays[ensno][lt - timedelta(minutes=timestep)] for lt in leadtimes])
+    adv_arrs_2 = np.stack([data_arrays[ensno][lt] for lt in leadtimes])
+
+    # Do the interpolation
+    # NOTE: Currently, this func takes ~50% of the total runtime
+    R0 = advection_correction.interpolate_ensemble(adv_arrs_1, adv_arrs_2, motion_fields[ensno])
+    return R0
+
+
+def run(
+    timestamp,
+    config,
+    ensemble_members,
+    only_deterministic_forecast=False,
+    only_observations=False,
+    only_ensemble_forecast=False,
+):
     """
     Run the interpolation calculation process for given ensemble members.
 
@@ -197,6 +253,16 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
         None
 
     """
+    # Determine which data to process
+    if only_deterministic_forecast:
+        ensemble_members = ["det"]
+        input_data = "deterministic"
+    elif only_observations:
+        ensemble_members.extend(["det"])
+        input_data = "deterministic"
+    elif only_ensemble_forecast:
+        input_data = "ensemble"
+
     # Read config file
     config_file = f"/config/{config}.json"
     # coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(config_file)
@@ -204,9 +270,11 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
     curdate = datetime.strptime(timestamp, "%Y%m%d%H%M")
 
     # Read first file to initialize sum array and output file_dict
-    timestep = conf["ensemble_input"]["timeres"]
-    input_path = Path(conf["observations"]["dir"])
-    first_file = input_path / conf["observations"]["filename"].format(
+    timestep = conf["input"][input_data]["data"]["timeres"]
+    output_timestep = conf["output"]["accumulations"]["timeres"]
+    obs_timestep = conf["input"]["observations"]["data"]["timeres"]
+    input_path = Path(conf["input"]["observations"]["data"]["dir"])
+    first_file = input_path / conf["input"]["observations"]["data"]["filename"].format(
         timestamp=f"{timestamp}",
     )
     first_image_array, quantity, first_timestamp, gain, offset, nodata, undetect = utils.read_hdf5(
@@ -240,13 +308,20 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
 
     leadtimes = pd.date_range(
         start=curdate,
-        end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
+        end=curdate + timedelta(minutes=conf["input"][input_data]["data"]["fc_len"]),
+        freq=f"{output_timestep}min",
+        inclusive="right",
+    ).to_pydatetime()
+
+    datatimes = pd.date_range(
+        start=curdate,
+        end=curdate + timedelta(minutes=conf["input"][input_data]["data"]["fc_len"]),
         freq=f"{timestep}min",
         inclusive="right",
     ).to_pydatetime()
 
-    accumulation_times = utils.determine_accumulation_times(curdate, conf)
-    accumulation_timestep = conf["output"]["timestep"]
+    accumulation_times = utils.determine_accumulation_times(curdate, conf, conf["input"][input_data]["data"]["fc_len"])
+    accumulation_timestep = conf["output"]["accumulations"]["timestep"]
 
     data_arrays = {i: {curdate: first_arr} for i in ensemble_members}
     nodata_masks = {i: {curdate: nodata_mask_first} for i in ensemble_members}
@@ -255,10 +330,10 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
 
     # Load observations that are needed to calculate accumulations
     # if any are needed
-    if not only_forecast:
+    if only_observations:
         process_observations(
             curdate,
-            timestep,
+            obs_timestep,
             conf,
             ensemble_members,
             accumulation_times,
@@ -271,21 +346,21 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
             lut_sr_obs,
             config,
         )
-
-    if only_observations:
         return
 
     motion_fields = {}
     # Calculate advection correction for each ensemble member
     for ensno in ensemble_members:
         logging.info(f"Processing ensemble member {ensno}")
-        # lue datat täällä niin ei mene niin paljoa muistia
-        for i, lt in enumerate(leadtimes):
+        # Read data for this ensemble member and calculate 5-min accumulation
+        for i, lt in enumerate(datatimes):
             # Read file
-            file = Path(conf["ensemble_input"]["dir"]) / conf["ensemble_input"]["filename"].format(
-                timestamp=f"{timestamp}00",
-                fc_timestamp=f"{lt:%Y%m%d%H%M}00",
-                fc_timestep=f"{timestep:03}",
+            file = Path(conf["input"][input_data]["data"]["dir"]) / conf["input"][input_data]["data"][
+                "filename"
+            ].format(
+                timestamp=f"{timestamp}",
+                fc_timestamp=f"{lt:%Y%m%d%H%M}",
+                fc_timestep=f"{int((lt - curdate).total_seconds() // 60):03}",
                 config=config,
                 ensno=ensno,
             )
@@ -297,52 +372,50 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
             nodata_masks[ensno][lt] = nodata_mask
             undetect_masks[ensno][lt] = undetect_mask
 
-        logging.info(f"Reading motion field for ensemble member {ensno}")
-        # Read motion field for this ensemble member
-        motion_file = Path(conf["motion"]["dir"]) / conf["motion"]["filename"].format(
-            timestamp=f"{timestamp}00",
-            ensno=ensno,
-            config=config,
-        )
-        motion_field, motion_timestep, motion_kmperpixel = utils.read_motion_hdf5(motion_file)
-        motion_fields[ensno] = utils._convert_motion_units_ms2pix(
-            motion_field, kmperpixel=motion_timestep, timestep=motion_kmperpixel
-        )
+        if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
+            logging.info(f"Reading motion field for ensemble member {ensno}")
+            R0 = read_motion_and_interpolate(
+                ensno, conf, input_data, config, timestamp, leadtimes, timestep, data_arrays, motion_fields
+            )
 
-        logging.info(f"Calculating advection correction for ensemble member {ensno}")
-        # Stack arrays to be interpolated so that we can calculate the interpolation only once
-        adv_arrs_1 = np.stack([data_arrays[ensno][lt - timedelta(minutes=timestep)] for lt in leadtimes])
-        adv_arrs_2 = np.stack([data_arrays[ensno][lt] for lt in leadtimes])
+            # Extract interpolated frames
+            for i, lt in enumerate(leadtimes):
+                interp_arrays[ensno][lt] = R0[i]
 
-        # Do the interpolation
-        # NOTE: Currently, this func takes ~50% of the total runtime
-        R0 = advection_correction.interpolate_ensemble(adv_arrs_1, adv_arrs_2, motion_fields[ensno])
+        else:
+            # No need to interpolate, just sum the arrays
+            for i, lt in enumerate(leadtimes):
+                keys_in_interval = [
+                    k for k in data_arrays[ensno].keys() if k <= lt and k > lt - timedelta(minutes=output_timestep)
+                ]
 
-        # Extract interpolated frames
+                if len(keys_in_interval) < (output_timestep / timestep):
+                    raise ValueError(
+                        f"Could not find enough data to calculate accumulation at {lt} for {ensno}. "
+                        f"Found {len(keys_in_interval)} out of {output_timestep / timestep} required."
+                    )
+
+                arr = np.stack([data_arrays[ensno][k] for k in keys_in_interval])
+                interp_arrays[ensno][lt] = np.nansum(arr, axis=0)
+
         for i, lt in enumerate(leadtimes):
-            interp_arrays[ensno][lt] = R0[i]
-
             nodata_mask = np.isnan(interp_arrays[ensno][lt])
             undetect_mask = interp_arrays[ensno][lt] == 0
 
             # Save interpolation array
             arr_ = utils.convert_dtype(
                 interp_arrays[ensno][lt],
-                conf["interpolation_output"],
+                conf["output"]["interpolation"],
                 nodata_mask,
                 undetect_mask,
             )
             # Write accumulation to file
-            outfile = Path(
-                conf["interpolation_output"]["dir"]
-                + "/"
-                + conf["interpolation_output"]["filename"].format(
-                    timestamp=f"{timestamp}00",
-                    fc_timestep=f"{(lt - curdate).total_seconds() / 60:.0f}",
-                    fc_timestamp=f"{lt:%Y%m%d%H%M}00",
-                    ensno=ensno,
-                    config=config,
-                )
+            outfile = Path(conf["output"]["interpolation"]["dir"]) / conf["output"]["interpolation"]["filename"].format(
+                timestamp=f"{timestamp}00",
+                fc_timestep=f"{(lt - curdate).total_seconds() / 60:.0f}",
+                fc_timestamp=f"{lt:%Y%m%d%H%M}00",
+                ensno=ensno,
+                config=config,
             )
             enddate = f"{lt:%Y%m%d}"
             endtime = f"{lt:%H%M}"
@@ -359,15 +432,15 @@ def run(timestamp, config, ensemble_members, only_observations=False, only_forec
                 starttime,
                 enddate,
                 endtime,
-                conf["interpolation_output"],
+                conf["output"]["interpolation"],
             )
 
         # Clear memory
-        del adv_arrs_1
-        del adv_arrs_2
-        del R0
-        del data_arrays[ensno]
-        del motion_fields[ensno]
+        try:
+            del data_arrays[ensno]
+            del motion_fields[ensno]
+        except (KeyError, UnboundLocalError):
+            pass
 
 
 if __name__ == "__main__":
@@ -384,7 +457,12 @@ if __name__ == "__main__":
         help="Ensemble members to process",
     )
     parser.add_argument("--only-observations", action="store_true", help="Only process observations")
-    parser.add_argument("--only-forecast", action="store_true", help="Only process forecast")
+    parser.add_argument("--only-ensemble-forecast", action="store_true", help="Only process ensemble forecast")
+    parser.add_argument(
+        "--only-deterministic-forecast",
+        action="store_true",
+        help="Only process deterministic forecast (ensemble members ignored)",
+    )
     parser.add_argument("--config", type=str, default="ravake-ens", help="Config file to use.")
 
     options = parser.parse_args()
@@ -392,4 +470,11 @@ if __name__ == "__main__":
     # Set logging level
     logging.basicConfig(level=logging.INFO)
 
-    run(options.timestamp, options.config, options.ensemble_members, options.only_observations, options.only_forecast)
+    run(
+        options.timestamp,
+        config=options.config,
+        ensemble_members=options.ensemble_members,
+        only_deterministic_forecast=options.only_deterministic_forecast,
+        only_observations=options.only_observations,
+        only_ensemble_forecast=options.only_ensemble_forecast,
+    )

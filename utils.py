@@ -326,7 +326,7 @@ def _convert_motion_units_ms2pix(data_ms, kmperpixel=1.0, timestep=1.0):
     return data_pxts
 
 
-def determine_accumulation_times(curdate, conf):
+def determine_accumulation_times(curdate, conf, fc_len):
     """
     Determine the accumulation times for a given date.
 
@@ -338,21 +338,21 @@ def determine_accumulation_times(curdate, conf):
         numpy.ndarray: An array of accumulation times.
 
     """
-    accumulation_timestep = conf["output"]["timestep"]
+    accumulation_timestep = conf["output"]["accumulations"]["timestep"]
 
-    if conf["output"]["write_acrr_fixed_step"]:
+    if conf["output"]["accumulations"]["write_acrr_fixed_step"]:
         accumulation_times_fixed = pd.date_range(
             start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
-            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
+            end=curdate + timedelta(minutes=fc_len),
             freq=f"{accumulation_timestep}min",
             inclusive="right",
         ).to_pydatetime()
     else:
         accumulation_times_fixed = np.array([])
-    if conf["output"]["write_acrr_from_start"]:
+    if conf["output"]["accumulations"]["write_acrr_from_start"]:
         accumulation_times_from_start = pd.date_range(
             start=curdate,
-            end=curdate + timedelta(minutes=conf["ensemble_input"]["fc_len"]),
+            end=curdate + timedelta(minutes=fc_len),
             freq=f"{accumulation_timestep}min",
             inclusive="right",
         ).to_pydatetime()
