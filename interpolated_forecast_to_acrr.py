@@ -12,9 +12,9 @@ import utils
 
 def load_ensemble_file(ensno, timestep, curdate, conf, config, file_dict_accum=None):
     infile = Path(
-        conf["interpolation_output"]["dir"]
+        conf["output"]["interpolation"]["dir"]
         + "/"
-        + conf["interpolation_output"]["filename"].format(
+        + conf["output"]["interpolation"]["filename"].format(
             timestamp=f"{curdate:%Y%m%d%H%M}00",
             fc_timestep=f"{(timestep - curdate).total_seconds() / 60:.0f}",
             fc_timestamp=f"{timestep:%Y%m%d%H%M}00",
@@ -29,7 +29,7 @@ def load_ensemble_file(ensno, timestep, curdate, conf, config, file_dict_accum=N
         return None, None, None, None
 
     # Unpack dtype
-    arr, nodata_mask, undetect_mask = utils.unpack_dtype(arr, conf["interpolation_output"])
+    arr, nodata_mask, undetect_mask = utils.unpack_dtype(arr, conf["output"]["interpolation"])
 
     if file_dict_accum is None:
         file_dict_accum = utils.init_filedict_accumulation(infile)
@@ -39,9 +39,9 @@ def load_ensemble_file(ensno, timestep, curdate, conf, config, file_dict_accum=N
 
 def load_det_file(timestep, curdate, conf, config, file_dict_accum=None):
     infile = Path(
-        conf["deterministic_input"]["dir"]
+        conf["input"]["deterministic"]["data"]["dir"]
         + "/"
-        + conf["deterministic_input"]["filename"].format(
+        + conf["input"]["deterministic"]["data"]["filename"].format(
             timestamp=f"{curdate:%Y%m%d%H%M}00",
             fc_timestep=f"{(timestep - curdate).total_seconds() / 60:.0f}",
             fc_timestamp=f"{timestep:%Y%m%d%H%M}00",
@@ -89,10 +89,12 @@ def run(timestamp, config):
     conf = utils.read_conf(config_file)
     curdate = datetime.strptime(timestamp, "%Y%m%d%H%M")
 
-    timestep = conf["ensemble_input"]["timeres"]
+    timestep = conf["input"]["ensemble"]["data"]["timeres"]
 
-    accumulation_times = utils.determine_accumulation_times(curdate, conf)
-    accumulation_timestep = conf["output"]["timestep"]
+    accumulation_times = utils.determine_accumulation_times(
+        curdate, conf, fc_len=conf["output"]["accumulations"]["fc_len"]
+    )
+    accumulation_timestep = conf["output"]["accumulations"]["timestep"]
 
     FILE_DICT_ACCUM = None
     # Calculate accumulations for the times that are needed
@@ -132,9 +134,9 @@ def run(timestamp, config):
                     FILE_DICT_ACCUM = file_dict_accum
                 continue
 
-            import ipdb
+            # import ipdb
 
-            ipdb.set_trace()
+            # ipdb.set_trace()
             arr, _, _, file_dict_accum = load_det_file(
                 tt,
                 curdate,
@@ -148,7 +150,7 @@ def run(timestamp, config):
                 FILE_DICT_ACCUM = file_dict_accum
 
         missing_ensemble_members = []
-        for ensno_ in range(1, conf["ensemble_input"]["n_ens_members"] + 1):
+        for ensno_ in range(1, conf["input"]["ensemble"]["data"]["n_ens_members"] + 1):
             interp_arrs = {}
             for tt in acrr_timesteps:
                 # Read ensemble member
@@ -169,7 +171,7 @@ def run(timestamp, config):
                     FILE_DICT_ACCUM = file_dict_accum
 
             # Sum 5min accumulations to accumulations of required length
-            logging.debug(f"Processing ensemble member {ensno_}/{conf['ensemble_input']['n_ens_members']}")
+            logging.debug(f"Processing ensemble member {ensno_}/{conf['input']['ensemble']['data']['n_ens_members']}")
             # Get keys that are in the interval
             # TODO if this is too low, we should reject the accumulation as invalid
             keys_in_interval = [k for k in interp_arrs.keys() if k > start and k <= end]
@@ -178,7 +180,7 @@ def run(timestamp, config):
             if len(keys_in_interval) < accumulation_timestep / timestep:
                 missing_ensemble_members.append(ensno_)
 
-                if len(missing_ensemble_members) > conf["ensemble_input"]["allow_n_members_missing"]:
+                if len(missing_ensemble_members) > conf["input"]["ensemble"]["data"]["allow_n_members_missing"]:
                     logging.warning(f"Too many ensemble members missing, stopping accumulation calculation")
                     sys.exit(1)
 
@@ -204,20 +206,20 @@ def run(timestamp, config):
         ens_undetect_mask = np.all([undetect_masks[k] for k in accrs.keys()], axis=0)
         ens_mean_ = utils.convert_dtype(
             ens_mean,
-            conf["output"],
+            conf["output"]["accumulations"],
             ens_nodata_mask,
             ens_undetect_mask,
         )
 
         # Write accumulation to file
         outfile = Path(
-            conf["output"]["dir"]
+            conf["output"]["accumulations"]["dir"]
             + "/"
-            + conf["output"]["filename"].format(
+            + conf["output"]["accumulations"]["filename"].format(
                 timestamp=f"{timestamp}00",
                 fc_timestep=f"{(end - curdate).total_seconds() / 60:.0f}",
                 fc_timestamp=f"{end:%Y%m%d%H%M}00",
-                acc_timestep=f'{conf["output"]["timestep"]:03}',
+                acc_timestep=f'{conf["output"]["accumulations"]["timestep"]:03}',
                 config=config,
             )
         )
@@ -236,14 +238,14 @@ def run(timestamp, config):
             starttime,
             enddate,
             endtime,
-            conf["output"],
+            conf["output"]["accumulations"],
         )
 
         # Write nodata and undetect masks to file
         nodata_outfile = outfile.parent / (outfile.stem + "_nodata_mask.h5")
         ens_nodata_mask_ = utils.convert_dtype(
             ens_nodata_mask,
-            conf["nodata_output"],
+            conf["output"]["nodata"],
             ens_nodata_mask,
             ens_undetect_mask,
         )
@@ -258,14 +260,14 @@ def run(timestamp, config):
             starttime,
             enddate,
             endtime,
-            conf["nodata_output"],
+            conf["output"]["nodata"],
             quantity="nodata_mask",
         )
 
         undetect_outfile = outfile.parent / (outfile.stem + "_undetect_mask.h5")
         ens_undetect_mask_ = utils.convert_dtype(
             ens_undetect_mask,
-            conf["undetect_output"],
+            conf["output"]["undetect"],
             ens_nodata_mask,
             ens_undetect_mask,
         )
@@ -279,7 +281,7 @@ def run(timestamp, config):
             starttime,
             enddate,
             endtime,
-            conf["undetect_output"],
+            conf["output"]["undetect"],
             quantity="undetect_mask",
         )
 

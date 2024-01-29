@@ -72,7 +72,8 @@
       "offset": 0,
       "nodata": 65535,
       "undetect": 0,
-      "timeres": 5
+      "timeres": 5,
+      "fc_len": 140
     },
     "interpolation": {
       "dir": "/output",
