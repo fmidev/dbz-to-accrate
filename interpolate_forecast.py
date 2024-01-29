@@ -96,6 +96,7 @@ def process_observations(
     FILE_DICT_ACCUM = None
     first_ens_number = ensemble_members[0]
     start = accumulation_times[0] - timedelta(minutes=accumulation_timestep)
+
     if start < curdate:
         obstimes = pd.date_range(
             start=start,
@@ -271,7 +272,7 @@ def run(
 
     # Read first file to initialize sum array and output file_dict
     timestep = conf["input"][input_data]["data"]["timeres"]
-    output_timestep = conf["output"]["accumulations"]["timeres"]
+    output_timestep = conf["output"]["accumulations"]["timeconfig"]["timeres"]
     obs_timestep = conf["input"]["observations"]["data"]["timeres"]
     input_path = Path(conf["input"]["observations"]["data"]["dir"])
     first_file = input_path / conf["input"]["observations"]["data"]["filename"].format(
@@ -321,7 +322,7 @@ def run(
     ).to_pydatetime()
 
     accumulation_times = utils.determine_accumulation_times(curdate, conf, conf["input"][input_data]["data"]["fc_len"])
-    accumulation_timestep = conf["output"]["accumulations"]["timestep"]
+    accumulation_timestep = conf["output"]["accumulations"]["timeconfig"]["timestep"]
 
     data_arrays = {i: {curdate: first_arr} for i in ensemble_members}
     nodata_masks = {i: {curdate: nodata_mask_first} for i in ensemble_members}
