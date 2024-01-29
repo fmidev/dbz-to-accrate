@@ -338,9 +338,9 @@ def determine_accumulation_times(curdate, conf, fc_len):
         numpy.ndarray: An array of accumulation times.
 
     """
-    accumulation_timestep = conf["output"]["accumulations"]["timestep"]
+    accumulation_timestep = conf["output"]["accumulations"]["timeconfig"]["timestep"]
 
-    if conf["output"]["accumulations"]["write_acrr_fixed_step"]:
+    if conf["output"]["accumulations"]["timeconfig"]["write_acrr_fixed_step"]:
         accumulation_times_fixed = pd.date_range(
             start=pd.Timestamp(curdate).floor(f"{accumulation_timestep}min"),
             end=curdate + timedelta(minutes=fc_len),
@@ -349,7 +349,7 @@ def determine_accumulation_times(curdate, conf, fc_len):
         ).to_pydatetime()
     else:
         accumulation_times_fixed = np.array([])
-    if conf["output"]["accumulations"]["write_acrr_from_start"]:
+    if conf["output"]["accumulations"]["timeconfig"]["write_acrr_from_start"]:
         accumulation_times_from_start = pd.date_range(
             start=curdate,
             end=curdate + timedelta(minutes=fc_len),
