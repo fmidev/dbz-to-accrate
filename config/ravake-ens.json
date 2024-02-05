@@ -71,7 +71,16 @@
       },
       "ensemble_mean": {
         "dir": "/output",
-        "filename": "{timestamp}00+{fc_timestep}min_radar.fmippn.accrate.ens_mean.{acc_timestep}min_conf={config}.h5",
+        "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.ens_mean.{acc_timestep}min_conf={config}.h5",
+        "dtype": "uint16",
+        "gain": 0.001,
+        "offset": 0,
+        "nodata": 65535,
+        "undetect": 0
+      },
+      "deterministic": {
+        "dir": "/output",
+        "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.det.{acc_timestep}min_conf={config}.h5",
         "dtype": "uint16",
         "gain": 0.001,
         "offset": 0,

@@ -244,7 +244,25 @@ def run(timestamp, config):
         # Deterministic accumulation
         accr_arrays_det = np.stack([interp_arrs["det"][k] for i, k in enumerate(acrr_timesteps)])
         accr_weights_det = determ_startw - determ_lapse * leadtime_indices
+        accr_det = np.nansum(accr_arrays_det, axis=0)
+        det_nodata_mask = np.all([np.isnan(interp_arrs["det"][k]) for k in acrr_timesteps], axis=0)
+        det_undetect_mask = np.all([interp_arrs["det"][k] == 0 for k in acrr_timesteps], axis=0)
+        save_accr(
+            accr_det,
+            det_nodata_mask,
+            det_undetect_mask,
+            conf["output"]["accumulations"]["deterministic"],
+            start,
+            end,
+            timestamp,
+            conf["output"]["accumulations"]["timeconfig"]["timestep"],
+            (end - curdate).total_seconds() / 60,
+            end,
+            config,
+            FILE_DICT_ACCUM,
+        )
 
+        # Weighted average of deterministic and ensemble
         accr_arrays_ens = np.stack(
             [[interp_arrs[ensno_][k] for i, k in enumerate(acrr_timesteps)] for ensno_ in ensemble_members]
         )
