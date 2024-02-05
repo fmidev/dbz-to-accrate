@@ -69,6 +69,49 @@ def load_det_file(timestep, curdate, conf, config, file_dict_accum=None):
     return arr, nodata_mask, undetect_mask, file_dict_accum
 
 
+def save_accr(
+    arr,
+    nodata_arr,
+    undetect_arr,
+    output_conf,
+    starttime,
+    endtime,
+    timestamp,
+    timestep,
+    fc_timestep,
+    fc_timestamp,
+    config,
+    FILE_DICT_ACCUM,
+    quantity="ACRR",
+):
+    arr_ = utils.convert_dtype(
+        arr,
+        output_conf,
+        nodata_arr,
+        undetect_arr,
+    )
+    outfile = Path(output_conf["dir"]) / output_conf["filename"].format(
+        timestamp=f"{timestamp}",
+        fc_timestep=f"{fc_timestep:.0f}",
+        fc_timestamp=f"{fc_timestamp:%Y%m%d%H%M}",
+        acc_timestep=f"{timestep:03}",
+        config=config,
+    )
+    utils.write_accumulated_h5(
+        outfile,
+        arr_,
+        FILE_DICT_ACCUM,
+        f"{endtime:%Y%m%d}",
+        f"{endtime:%H%M}",
+        f"{starttime:%Y%m%d}",
+        f"{starttime:%H%M}",
+        f"{endtime:%Y%m%d}",
+        f"{endtime:%H%M}",
+        output_conf,
+        quantity=quantity,
+    )
+
+
 def run(timestamp, config):
     """
     Run the accumulation calculation process.
@@ -182,42 +225,23 @@ def run(timestamp, config):
         ens_mean = np.nanmean([accrs[k] for k in ensemble_members], axis=0)
         ens_nodata_mask = np.all([nodata_masks[k] for k in ensemble_members], axis=0)
         ens_undetect_mask = np.all([undetect_masks[k] for k in ensemble_members], axis=0)
-        ens_mean_ = utils.convert_dtype(
+
+        save_accr(
             ens_mean,
-            conf["output"]["accumulations"]["ensemble_mean"],
             ens_nodata_mask,
             ens_undetect_mask,
-        )
-
-        # Write ensemble accumulation to file
-        outfile = Path(conf["output"]["accumulations"]["ensemble_mean"]["dir"]) / conf["output"]["accumulations"][
-            "ensemble_mean"
-        ]["filename"].format(
-            timestamp=f"{timestamp}",
-            fc_timestep=f"{(end - curdate).total_seconds() / 60:.0f}",
-            fc_timestamp=f"{end:%Y%m%d%H%M}",
-            acc_timestep=f'{conf["output"]["accumulations"]["timeconfig"]["timestep"]:03}',
-            config=config,
-        )
-        enddate = f"{end:%Y%m%d}"
-        endtime = f"{end:%H%M}"
-        startdate = f"{start:%Y%m%d}"
-        starttime = f"{start:%H%M}"
-
-        utils.write_accumulated_h5(
-            outfile,
-            ens_mean_,
-            FILE_DICT_ACCUM,
-            enddate,
-            endtime,
-            startdate,
-            starttime,
-            enddate,
-            endtime,
             conf["output"]["accumulations"]["ensemble_mean"],
+            start,
+            end,
+            timestamp,
+            conf["output"]["accumulations"]["timeconfig"]["timestep"],
+            (end - curdate).total_seconds() / 60,
+            end,
+            config,
+            FILE_DICT_ACCUM,
         )
 
-        # weighted average of deterministic and ensemble
+        # Deterministic accumulation
         accr_arrays_det = np.stack([interp_arrs["det"][k] for i, k in enumerate(acrr_timesteps)])
         accr_weights_det = determ_startw - determ_lapse * leadtime_indices
 
@@ -244,89 +268,54 @@ def run(timestamp, config):
         # np.allclose(accr_weighted[mask], ens_det_accr[mask])
 
         accr_weighted = np.sum(avg1, axis=0)
-        # TODO update nodata masks
-        accr_weighted_ = utils.convert_dtype(
+        # TODO check nodata masks
+        weighted_nodata_mask = ens_nodata_mask | det_nodata_mask
+        weighted_undetect_mask = ens_undetect_mask | det_undetect_mask
+        save_accr(
             accr_weighted,
+            weighted_nodata_mask,
+            weighted_undetect_mask,
             conf["output"]["accumulations"]["weighted_mean_det_ens"],
-            ens_nodata_mask,
-            ens_undetect_mask,
-        )
-        # Write to file
-        outfile = Path(conf["output"]["accumulations"]["weighted_mean_det_ens"]["dir"]) / conf["output"][
-            "accumulations"
-        ]["weighted_mean_det_ens"]["filename"].format(
-            timestamp=f"{timestamp}00",
-            fc_timestep=f"{(end - curdate).total_seconds() / 60:.0f}",
-            fc_timestamp=f"{end:%Y%m%d%H%M}00",
-            acc_timestep=f'{conf["output"]["accumulations"]["timeconfig"]["timestep"]:03}',
-            config=config,
-        )
-        utils.write_accumulated_h5(
-            outfile,
-            accr_weighted_,
+            start,
+            end,
+            timestamp,
+            conf["output"]["accumulations"]["timeconfig"]["timestep"],
+            (end - curdate).total_seconds() / 60,
+            end,
+            config,
             FILE_DICT_ACCUM,
-            enddate,
-            endtime,
-            startdate,
-            starttime,
-            enddate,
-            endtime,
-            conf["output"]["accumulations"]["weighted_mean_det_ens"],
         )
 
         # Write nodata and undetect masks to file
-        nodata_outfile = Path(conf["output"]["nodata"]["dir"]) / conf["output"]["nodata"]["filename"].format(
-            timestamp=f"{timestamp}00",
-            fc_timestep=f"{(end - curdate).total_seconds() / 60:.0f}",
-            fc_timestamp=f"{end:%Y%m%d%H%M}00",
-            acc_timestep=f'{conf["output"]["accumulations"]["timeconfig"]["timestep"]:03}',
-            config=config,
-        )
-        ens_nodata_mask_ = utils.convert_dtype(
+        save_accr(
             ens_nodata_mask,
-            conf["output"]["nodata"],
             ens_nodata_mask,
             ens_undetect_mask,
-        )
-
-        utils.write_accumulated_h5(
-            nodata_outfile,
-            ens_nodata_mask_,
-            FILE_DICT_ACCUM,
-            enddate,
-            endtime,
-            startdate,
-            starttime,
-            enddate,
-            endtime,
             conf["output"]["nodata"],
+            start,
+            end,
+            timestamp,
+            conf["output"]["accumulations"]["timeconfig"]["timestep"],
+            (end - curdate).total_seconds() / 60,
+            end,
+            config,
+            FILE_DICT_ACCUM,
             quantity="nodata_mask",
         )
 
-        undetect_outfile = Path(conf["output"]["undetect"]["dir"]) / conf["output"]["undetect"]["filename"].format(
-            timestamp=f"{timestamp}00",
-            fc_timestep=f"{(end - curdate).total_seconds() / 60:.0f}",
-            fc_timestamp=f"{end:%Y%m%d%H%M}00",
-            acc_timestep=f'{conf["output"]["accumulations"]["timeconfig"]["timestep"]:03}',
-            config=config,
-        )
-        ens_undetect_mask_ = utils.convert_dtype(
+        save_accr(
             ens_undetect_mask,
-            conf["output"]["undetect"],
             ens_nodata_mask,
             ens_undetect_mask,
-        )
-        utils.write_accumulated_h5(
-            undetect_outfile,
-            ens_undetect_mask_,
-            FILE_DICT_ACCUM,
-            enddate,
-            endtime,
-            startdate,
-            starttime,
-            enddate,
-            endtime,
             conf["output"]["undetect"],
+            start,
+            end,
+            timestamp,
+            conf["output"]["accumulations"]["timeconfig"]["timestep"],
+            (end - curdate).total_seconds() / 60,
+            end,
+            config,
+            FILE_DICT_ACCUM,
             quantity="undetect_mask",
         )
 
