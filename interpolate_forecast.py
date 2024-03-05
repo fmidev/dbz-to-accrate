@@ -373,6 +373,43 @@ def run(
             nodata_masks[ensno][lt] = nodata_mask
             undetect_masks[ensno][lt] = undetect_mask
 
+            # Save rate to file every 15 minutes
+            if int(fc_timestamp) % 15 == 0 and ensno == "det":
+
+                # Save rate array
+                arr_ = utils.convert_dtype(
+                    arr,
+                    conf["output"]["rate"],
+                    nodata_mask,
+                    undetect_mask,
+                )
+                # Write rate to file
+                outfile = Path(conf["output"]["rate"]["dir"]) / conf["output"]["rate"]["filename"].format(
+                    timestamp=f"{timestamp}00",
+                    fc_timestep=f"{(lt - curdate).total_seconds() / 60:.0f}",
+                    fc_timestamp=f"{lt:%Y%m%d%H%M}00",
+                    ensno=ensno,
+                    config=config,
+                )
+                enddate = f"{lt:%Y%m%d}"
+                endtime = f"{lt:%H%M}"
+                startdate = f"{lt - timedelta(minutes=timestep):%Y%m%d}"
+                starttime = f"{lt - timedelta(minutes=timestep):%H%M}"
+
+                utils.write_accumulated_h5(
+                    outfile,
+                    arr_,
+                    file_dict_accum,
+                    enddate,
+                    endtime,
+                    startdate,
+                    starttime,
+                    enddate,
+                    endtime,
+                    conf["output"]["interpolation"],
+                    quantity = "RATE"
+                )           
+
         if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
             logging.info(f"Reading motion field for ensemble member {ensno}")
             R0 = read_motion_and_interpolate(

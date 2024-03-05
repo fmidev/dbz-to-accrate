@@ -108,6 +108,15 @@
       "nodata": 65535,
       "undetect": 0
     },
+    "rate": {
+      "dir": "/output",
+      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.rate_conf={config}_ensmem={ensno}.h5",
+      "dtype": "uint16",
+      "gain": 0.001,
+      "offset": 0,
+      "nodata": 65535,
+      "undetect": 0
+    },
     "nodata": {
       "dir": "/output",
       "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.accrate.nodata.{acc_timestep}min_conf={config}.h5",
