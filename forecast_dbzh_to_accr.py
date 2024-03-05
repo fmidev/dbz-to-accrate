@@ -34,7 +34,7 @@ def run(timestamp, config):
         offset,
         nodata,
         undetect,
-    ) = utils.read_hdf5(first_file)
+    ) = utils.read_hdf5(first_file, qty="DBZH")
     nodata_mask_first = first_image_array == nodata
     undetect_mask_first = first_image_array == undetect
 
@@ -54,7 +54,7 @@ def run(timestamp, config):
         snowprob_offset,
         snowprob_nodata,
         snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file)
+    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
 
     # Calculate look up table (lut) for dBZ -> rate conversion.
     lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(
@@ -104,7 +104,7 @@ def run(timestamp, config):
             offset,
             nodata,
             undetect,
-        ) = utils.read_hdf5(input_file)
+        ) = utils.read_hdf5(input_file, qty="DBZH")
 
         # Convert to precipitation rate and mask nodata = np.nan and undetect = 0 for sum calculation
         nodata_mask = image_array == nodata
