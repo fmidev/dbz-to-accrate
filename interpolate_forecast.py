@@ -374,7 +374,7 @@ def run(
             undetect_masks[ensno][lt] = undetect_mask
 
             # Save rate to file every 15 minutes
-            if int(f"{lt:%Y%m%d%H%M}") % 15 == 0 and ensno == "det":
+            if int(lt.minute) % 15 == 0 and ensno == "det":
 
                 # Save rate array
                 arr_ = utils.convert_dtype(
