@@ -110,7 +110,7 @@
     },
     "rate": {
       "dir": "/output",
-      "filename": "{timestamp}+{fc_timestep}min_radar.fmippn.rate_conf={config}_ensmem={ensno}.h5",
+      "filename": "{timestamp}_{fc_timestamp}_radar.fmippn.rate_conf={config}_ensmem={ensno}.h5",
       "dtype": "uint16",
       "gain": 0.001,
       "offset": 0,

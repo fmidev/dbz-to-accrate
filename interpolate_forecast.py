@@ -385,9 +385,9 @@ def run(
                 )
                 # Write rate to file
                 outfile = Path(conf["output"]["rate"]["dir"]) / conf["output"]["rate"]["filename"].format(
-                    timestamp=f"{timestamp}00",
+                    timestamp=f"{timestamp}",
                     fc_timestep=f"{(lt - curdate).total_seconds() / 60:.0f}",
-                    fc_timestamp=f"{lt:%Y%m%d%H%M}00",
+                    fc_timestamp=f"{lt:%Y%m%d%H%M}",
                     ensno=ensno,
                     config=config,
                 )
