@@ -218,12 +218,12 @@ def run(timestamp, config):
             nodata_arrs = [np.isnan(interp_arrs[ensno_][k]) for k in keys_in_interval]
             undetect_arrs = [interp_arrs[ensno_][k] == 0 for k in keys_in_interval]
             # TODO figure out if here should be any() or all()
-            nodata_masks[ensno_] = np.all(nodata_arrs, axis=0)
+            nodata_masks[ensno_] = np.any(nodata_arrs, axis=0)
             undetect_masks[ensno_] = np.all(undetect_arrs, axis=0)
 
         # Ensemble mean for the accumulation
         ens_mean = np.nanmean([accrs[k] for k in ensemble_members], axis=0)
-        ens_nodata_mask = np.all([nodata_masks[k] for k in ensemble_members], axis=0)
+        ens_nodata_mask = np.any([nodata_masks[k] for k in ensemble_members], axis=0)
         ens_undetect_mask = np.all([undetect_masks[k] for k in ensemble_members], axis=0)
 
         save_accr(
@@ -245,7 +245,7 @@ def run(timestamp, config):
         accr_arrays_det = np.stack([interp_arrs["det"][k] for i, k in enumerate(acrr_timesteps)])
         accr_weights_det = determ_startw - determ_lapse * leadtime_indices
         accr_det = np.nansum(accr_arrays_det, axis=0)
-        det_nodata_mask = np.all([np.isnan(interp_arrs["det"][k]) for k in acrr_timesteps], axis=0)
+        det_nodata_mask = np.any([np.isnan(interp_arrs["det"][k]) for k in acrr_timesteps], axis=0)
         det_undetect_mask = np.all([interp_arrs["det"][k] == 0 for k in acrr_timesteps], axis=0)
         save_accr(
             accr_det,
