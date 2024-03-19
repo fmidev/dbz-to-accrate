@@ -373,8 +373,8 @@ def run(
             nodata_masks[ensno][lt] = nodata_mask
             undetect_masks[ensno][lt] = undetect_mask
 
-            # Save rate to file every 15 minutes
-            if int(lt.minute) % 15 == 0 and ensno == "det":
+            # Save rate to file every 5 minutes
+            if int(lt.minute) % 5 == 0 and ensno == "det":
 
                 # Save rate array
                 arr_ = utils.convert_dtype(
