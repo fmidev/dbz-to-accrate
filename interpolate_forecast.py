@@ -294,18 +294,18 @@ def run(
     first_arr = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array), lut_rr_obs)
 
     # Placeholder for snow probability handling, once the data is available
-    # snowprob_file = (
-    #     f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
-    # )
-    # (
-    #     snowprob,
-    #     snowprob_quantity,
-    #     snowprob_timestamp,
-    #     snowprob_gain,
-    #     snowprob_offset,
-    #     snowprob_nodata,
-    #     snowprob_undetect,
-    # ) = utils.read_hdf5(snowprob_file)
+    snowprob_file = (
+        f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
+    )
+    (
+        snowprob,
+        snowprob_quantity,
+        snowprob_timestamp,
+        snowprob_gain,
+        snowprob_offset,
+        snowprob_nodata,
+        snowprob_undetect,
+    ) = utils.read_hdf5(snowprob_file)
 
     leadtimes = pd.date_range(
         start=curdate,
