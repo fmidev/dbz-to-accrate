@@ -295,7 +295,7 @@ def run(
 
     # Placeholder for snow probability handling, once the data is available
     snowprob_file = (
-        f"{conf['input']['snowprob']['data']['dir']/{conf['input']['snowprob']['data']['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
+        f"{conf['input']['snowprob']['data']['dir']}/{conf['input']['snowprob']['data']['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
     )
     (
         snowprob,
