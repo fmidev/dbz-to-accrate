@@ -305,7 +305,7 @@ def run(
         snowprob_offset,
         snowprob_nodata,
         snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file)
+    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
 
     leadtimes = pd.date_range(
         start=curdate,
