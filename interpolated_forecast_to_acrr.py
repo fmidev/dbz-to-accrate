@@ -170,7 +170,7 @@ def run(timestamp, config):
         accrs = {}
         nodata_masks = {}
         undetect_masks = {}
-        logging.info(f"Processing accumulation timestep {start}")
+        logging.info(f"Processing accumulation timestep {start} - {end}")
 
         missing_ensemble_members = []
         interp_arrs = {}
@@ -202,7 +202,7 @@ def run(timestamp, config):
                 missing_ensemble_members.append(ensno_)
 
                 if len(missing_ensemble_members) > conf["input"]["ensemble"]["data"]["allow_n_members_missing"]:
-                    logging.warning(f"Too many ensemble members missing, stopping accumulation calculation")
+                    logging.error(f"Too many ensemble members missing, stopping accumulation calculation")
                     sys.exit(1)
 
                 logging.warning(
@@ -221,10 +221,12 @@ def run(timestamp, config):
             nodata_masks[ensno_] = np.any(nodata_arrs, axis=0)
             undetect_masks[ensno_] = np.all(undetect_arrs, axis=0)
 
+        existing_ensemble_members = list(set(ensemble_members) - set(missing_ensemble_members))
+
         # Ensemble mean for the accumulation
-        ens_mean = np.nanmean([accrs[k] for k in ensemble_members], axis=0)
-        ens_nodata_mask = np.any([nodata_masks[k] for k in ensemble_members], axis=0)
-        ens_undetect_mask = np.all([undetect_masks[k] for k in ensemble_members], axis=0)
+        ens_mean = np.nanmean([accrs[k] for k in existing_ensemble_members], axis=0)
+        ens_nodata_mask = np.any([nodata_masks[k] for k in existing_ensemble_members], axis=0)
+        ens_undetect_mask = np.all([undetect_masks[k] for k in existing_ensemble_members], axis=0)
 
         save_accr(
             ens_mean,
@@ -264,12 +266,12 @@ def run(timestamp, config):
 
         # Weighted average of deterministic and ensemble
         accr_arrays_ens = np.stack(
-            [[interp_arrs[ensno_][k] for i, k in enumerate(acrr_timesteps)] for ensno_ in ensemble_members]
+            [[interp_arrs[ensno_][k] for i, k in enumerate(acrr_timesteps)] for ensno_ in existing_ensemble_members]
         )
         accr_arrays = np.concatenate([accr_arrays_det[np.newaxis, :, :], accr_arrays_ens], axis=0)
 
         weights = np.concatenate(
-            [accr_weights_det[np.newaxis, :], np.ones((len(ensemble_members), len(acrr_timesteps)))], axis=0
+            [accr_weights_det[np.newaxis, :], np.ones((len(existing_ensemble_members), len(acrr_timesteps)))], axis=0
         )
 
         # for loop version
