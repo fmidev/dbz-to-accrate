@@ -137,9 +137,40 @@ def run(timestamp, config, use_snowprob=True):
         output_conf["accrate"],
     )
 
-
-def main():
-    run(options.timestamp, options.config)
+    # Write rain rate to file
+    nodata_mask = ~np.isfinite(second_image_array)
+    undetect_mask = second_image_array == 0
+    rate = utils.convert_dtype(second_image_array, output_conf["rate"], nodata_mask, undetect_mask)
+    outdir = Path(
+        output_conf["rate"]["dir"].format(
+            year=second_timestamp[0:4],
+            month=second_timestamp[4:6],
+            day=second_timestamp[6:8],
+        )
+    )
+    outdir.mkdir(parents=True, exist_ok=True)
+    outfile = outdir / output_conf["rate"]["filename"].format(
+        timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}', config=config
+    )
+    startdate = f"{second_timestep:%Y%m%d}"
+    starttime = f"{second_timestep:%H%M00}"
+    enddate = f"{second_timestep:%Y%m%d}"
+    endtime = f"{second_timestep:%H%M00}"
+    date = enddate
+    time = endtime
+    utils.write_accumulated_h5(
+        outfile,
+        rate,
+        file_dict_accum,
+        date,
+        time,
+        startdate,
+        starttime,
+        enddate,
+        endtime,
+        output_conf["rate"],
+        quantity="RATE",
+    )
 
 
 if __name__ == "__main__":
