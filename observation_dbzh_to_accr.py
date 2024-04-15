@@ -10,24 +10,29 @@ import advection_correction
 
 def run(timestamp, config, use_snowprob=True):
     config_file = f"/config/{config}.json"
-    coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(
-        config_file
-    )
+    coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(config_file)
 
     # Get current and earlier timestamp
     second_timestamp = timestamp
-    formatted_time_second = datetime.datetime.strptime(second_timestamp, "%Y%m%d%H%M")
-    first_timestamp = (
-        formatted_time_second - datetime.timedelta(minutes=(input_conf["timeres"]))
-    ).strftime("%Y%m%d%H%M")
+    second_timestep = datetime.datetime.strptime(second_timestamp, "%Y%m%d%H%M")
+    first_timestamp = (second_timestep - datetime.timedelta(minutes=(input_conf["timeres"]))).strftime("%Y%m%d%H%M")
+    first_timestep = second_timestep - datetime.timedelta(minutes=(input_conf["timeres"]))
 
     # Read image array hdf5's
-    if input_conf["dir_contains_date"]:
-        first_file = f"{input_conf['dir'].format(year=first_timestamp[0:4], month=first_timestamp[4:6], day=first_timestamp[6:8])}/{input_conf['filename'].format(timestamp=first_timestamp)}"
-        second_file = f"{input_conf['dir'].format(year=second_timestamp[0:4], month=second_timestamp[4:6], day=second_timestamp[6:8])}/{input_conf['filename'].format(timestamp=second_timestamp)}"
-    else:
-        first_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=first_timestamp)}"
-        second_file = f"{input_conf['dir']}/{input_conf['filename'].format(timestamp=second_timestamp)}"
+    first_file = Path(
+        input_conf["dir"].format(
+            year=first_timestep.strftime("%Y"),
+            month=first_timestep.strftime("%m"),
+            day=first_timestep.strftime("%d"),
+        )
+    ) / input_conf["filename"].format(timestamp=first_timestamp)
+    second_file = Path(
+        input_conf["dir"].format(
+            year=second_timestep.strftime("%Y"),
+            month=second_timestep.strftime("%m"),
+            day=second_timestep.strftime("%d"),
+        )
+    ) / input_conf["filename"].format(timestamp=second_timestamp)
 
     (
         first_image_array,
