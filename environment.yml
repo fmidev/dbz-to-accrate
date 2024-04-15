@@ -10,5 +10,8 @@ dependencies:
   - pip
   - pysteps
   - opencv
+  - pandas
+  - numba
+  - dask
   - pip:
       - git+https://github.com/fmidev/hiisi.git
