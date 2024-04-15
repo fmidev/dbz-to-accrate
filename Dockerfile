@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 # Install conda
-RUN apt-get -qq update && apt-get -qq -y install curl bzip2 libgl1-mesa-glx \
+RUN apt-get -qq update && apt-get -qq -y install curl bzip2 libgl1-mesa-glx	libegl1 libopengl0 \
     && curl -sSL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -bfp /usr/local \
     && rm -rf /tmp/miniconda.sh \
