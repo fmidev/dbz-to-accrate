@@ -8,7 +8,7 @@ import utils
 import advection_correction
 
 
-def run(timestamp, config):
+def run(timestamp, config, use_snowprob=True):
     config_file = f"/config/{config}.json"
     coef, interp_conf, snowprob_conf, input_conf, output_conf = utils.read_config(
         config_file
@@ -51,39 +51,35 @@ def run(timestamp, config):
     undetect_mask_first = first_image_array == undetect
     nodata_mask_second = second_image_array == nodata
     undetect_mask_second = second_image_array == undetect
-    
-    # Read probability of snow in array from file. Use snow probability
-    # file of first timestamp to avoid having to wait for newer data.    
-    snowprob_file = (
-        snowprob_conf["dir"]
-        + "/"
-        + snowprob_conf["filename"].format(timestamp=first_timestamp)
-    )
-    (
-        snowprob,
-        snowprob_quantity,
-        snowprob_timestamp,
-        snowprob_gain,
-        snowprob_offset,
-        snowprob_nodata,
-        snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
 
     # Calculate look up tables (lut) for dBZ -> rate conversion.
     lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(
         interp_conf["timeres"], coef, nodata, undetect, gain, offset
     )
 
+    # Read probability of snow in array from file. Use snow probability
+    # file of first timestamp to avoid having to wait for newer data.
+    if use_snowprob:
+        snowprob_file = snowprob_conf["dir"] + "/" + snowprob_conf["filename"].format(timestamp=first_timestamp)
+        (
+            snowprob,
+            snowprob_quantity,
+            snowprob_timestamp,
+            snowprob_gain,
+            snowprob_offset,
+            snowprob_nodata,
+            snowprob_undetect,
+        ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
+
+        # Convert image arrays dBZ -> rate
+        first_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(first_image_array), lut_rr, lut_sr, snowprob)
+        second_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(second_image_array), lut_rr, lut_sr, snowprob)
+    else:
+        first_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array), lut_rr)
+        second_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(second_image_array), lut_rr)
+
     # Init output file_dict
     file_dict_accum = utils.init_filedict_accumulation(first_file)
-
-    # Convert image arrays dBZ -> rate
-    first_image_array = dbzh_to_rate.dBZtoRATE_lut(
-        np.int_(first_image_array), lut_rr, lut_sr, snowprob
-    )
-    second_image_array = dbzh_to_rate.dBZtoRATE_lut(
-        np.int_(second_image_array), lut_rr, lut_sr, snowprob
-    )
 
     # Change nodata and undetect to zero and np.nan before interpolation
     first_image_array[nodata_mask_first] = np.nan
@@ -146,12 +142,9 @@ def main():
 if __name__ == "__main__":
     # Parse commandline arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--timestamp", type=str, default="202201170700", help="Input timestamp"
-    )
-    parser.add_argument(
-        "--config", type=str, default="ravake_composite", help="Config file to use."
-    )
+    parser.add_argument("--timestamp", type=str, default="202201170700", help="Input timestamp")
+    parser.add_argument("--config", type=str, default="ravake_composite", help="Config file to use.")
+    parser.add_argument("--no-snowprob", action="store_false", dest="use_snowprob", help="Use snow probability")
 
     options = parser.parse_args()
-    main()
+    run(options.timestamp, options.config, options.use_snowprob)
