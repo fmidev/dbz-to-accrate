@@ -94,36 +94,34 @@ def run(timestamp, config, use_snowprob=True):
 
     # Call interpolation
     R = np.array([first_image_array, second_image_array])
-    R_interp = advection_correction.advection_correction(
-        R, input_conf["timeres"], interp_conf["timeres"]
-    )
+    R_interp = advection_correction.advection_correction(R, input_conf["timeres"], interp_conf["timeres"])
 
     # Init sum array and calculate sum
     acc_rate = np.full_like(first_image_array, np.nan)
     for i in range(0, len(R_interp)):
-        acc_rate = np.where(
-            np.isnan(acc_rate), R_interp[i], acc_rate + np.nan_to_num(R_interp[i])
-        )
+        acc_rate = np.where(np.isnan(acc_rate), R_interp[i], acc_rate + np.nan_to_num(R_interp[i]))
 
     nodata_mask = ~np.isfinite(acc_rate)
     undetect_mask = acc_rate == 0
-    acc_rate = utils.convert_dtype(acc_rate, output_conf, nodata_mask, undetect_mask)
+    acc_rate = utils.convert_dtype(acc_rate, output_conf["accrate"], nodata_mask, undetect_mask)
 
     # Write to file
-    outdir = output_conf["dir"].format(
-        year=second_timestamp[0:4],
-        month=second_timestamp[4:6],
-        day=second_timestamp[6:8],
+    outdir = Path(
+        output_conf["accrate"]["dir"].format(
+            year=second_timestamp[0:4],
+            month=second_timestamp[4:6],
+            day=second_timestamp[6:8],
+        )
     )
-    Path(outdir).mkdir(parents=True, exist_ok=True)
-    # outfile = f"{outdir}/{output_conf['filename'].format(timestamp=timestamp, timeres=input_conf['timeres'])}"
-    outfile = f"""{outdir}/{output_conf['filename'].format(
-        timestamp=timestamp,
-        timeres=f'{input_conf["timeres"]:03}')}"""
-    startdate = first_timestamp[0:8]
-    starttime = first_timestamp[8:14]
-    enddate = f"{second_timestamp[0:8]}00"
-    endtime = f"{second_timestamp[8:14]}00"
+    outdir.mkdir(parents=True, exist_ok=True)
+    outfile = outdir / output_conf["accrate"]["filename"].format(
+        timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}', config=config
+    )
+
+    startdate = f"{first_timestep:%Y%m%d}"
+    starttime = f"{first_timestep:%H%M00}"
+    enddate = f"{second_timestep:%Y%m%d}"
+    endtime = f"{second_timestep:%H%M00}"
     date = enddate
     time = endtime
     utils.write_accumulated_h5(
@@ -136,7 +134,7 @@ def run(timestamp, config, use_snowprob=True):
         starttime,
         enddate,
         endtime,
-        output_conf,
+        output_conf["accrate"],
     )
 
 
