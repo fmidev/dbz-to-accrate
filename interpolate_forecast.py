@@ -263,6 +263,9 @@ def run(
         input_data = "deterministic"
     elif only_ensemble_forecast:
         input_data = "ensemble"
+    else:
+        ensemble_members.extend(["det"])
+        input_data = "deterministic"
 
     # Read config file
     config_file = f"/config/{config}.json"
@@ -419,6 +422,7 @@ def run(
             # Extract interpolated frames
             for i, lt in enumerate(leadtimes):
                 interp_arrays[ensno][lt] = R0[i]
+                interp_arrays[ensno][lt][nodata_masks[ensno][lt]] = np.nan
 
         else:
             # No need to interpolate, just sum the arrays
@@ -435,6 +439,8 @@ def run(
 
                 arr = np.stack([data_arrays[ensno][k] for k in keys_in_interval])
                 interp_arrays[ensno][lt] = np.nansum(arr, axis=0)
+                nodata_mask = np.all([nodata_masks[ensno][k] for k in keys_in_interval], axis=0)
+                interp_arrays[ensno][lt][nodata_mask] = np.nan
 
         for i, lt in enumerate(leadtimes):
             nodata_mask = np.isnan(interp_arrays[ensno][lt])
