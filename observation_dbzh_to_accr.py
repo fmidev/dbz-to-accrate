@@ -140,6 +140,8 @@ def run(timestamp, config, use_snowprob=True):
     # Write rain rate to file
     nodata_mask = ~np.isfinite(second_image_array)
     undetect_mask = second_image_array == 0
+    # Convert from mm/Tmin to mm/h
+    second_image_array = second_image_array * (60 / interp_conf["timeres"])
     rate = utils.convert_dtype(second_image_array, output_conf["rate"], nodata_mask, undetect_mask)
     outdir = Path(
         output_conf["rate"]["dir"].format(
