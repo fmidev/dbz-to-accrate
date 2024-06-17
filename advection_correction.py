@@ -100,7 +100,7 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
 
     factor = 1 / T**2
 
-    for i in range(t, T + 1, t):
+    for i in range(t, T + t, t):
         pos1 = np.array((y - i / T * motion[1], x - i / T * motion[0]))
         pos1 = pos1.reshape(pos1.shape[0], -1)
         # NOTE: Expensive parts in this function is the map_coords call,
