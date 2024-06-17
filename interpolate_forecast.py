@@ -377,10 +377,12 @@ def run(
 
             # Save rate to file every 5 minutes
             if int(lt.minute) % 5 == 0 and ensno == "det":
+                # Change unit from mm/timeresolution to mm/h
+                arr_ = arr * 60 / timestep
 
                 # Save rate array
                 arr_ = utils.convert_dtype(
-                    arr,
+                    arr_,
                     conf["output"]["rate"],
                     nodata_mask,
                     undetect_mask,
@@ -409,8 +411,8 @@ def run(
                     enddate,
                     endtime,
                     conf["output"]["interpolation"],
-                    quantity = "RATE"
-                )           
+                    quantity="RATE",
+                )
 
         if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
             logging.info(f"Reading motion field for ensemble member {ensno}")
