@@ -238,6 +238,7 @@ def run(
     only_deterministic_forecast=False,
     only_observations=False,
     only_ensemble_forecast=False,
+    use_snowprob=True,
 ):
     """
     Run the interpolation calculation process for given ensemble members.
