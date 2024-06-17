@@ -77,7 +77,7 @@ def dBZtoSR(dbz, coef):
 
 
 def calc_lookuptables_dBZtoRATE(timeresolution, coef, nodata, undetect, gain, offset):
-    """Calculate look-up tables for dBZ to RR and dBZ to SR conversion.
+    """Calculate look-up tables for dBZ to RR (in mm/timeresolution) and dBZ to SR conversion.
 
     Keyword arguments:
     timeresolution --
