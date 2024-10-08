@@ -38,23 +38,8 @@ def run(timestamp, config):
     nodata_mask_first = first_image_array == nodata
     undetect_mask_first = first_image_array == undetect
 
-    # Read probability of snow from file. Use 5 minutes earlier
-    # timestamp if newest file has not yet arrived. 
-    snowprob_file = f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=timestamp_formatted.strftime('%Y%m%d%H%M'))}"
-    
-    if not os.path.isfile(snowprob_file):
-        earlier_timestamp = (timestamp_formatted - datetime.timedelta(minutes=5).strftime("%Y%m%d%H%M"))
-        snowprob_file = f"{snowprob_conf['dir']}/{snowprob_conf['filename'].format(timestamp=earlier_timestamp)}"
-        
-    (
-        snowprob,
-        snowprob_quantity,
-        snowprob_timestamp,
-        snowprob_gain,
-        snowprob_offset,
-        snowprob_nodata,
-        snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
+    # Read probability of snow from file.
+    snowprob = utils.read_snowprob(first_timestep, snowprob_conf)
 
     # Calculate look up table (lut) for dBZ -> rate conversion.
     lut_rr, lut_sr = dbzh_to_rate.calc_lookuptables_dBZtoRATE(

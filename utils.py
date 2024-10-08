@@ -9,6 +9,7 @@ import logging
 import sys
 import pandas as pd
 from datetime import timedelta
+from pathlib import Path
 
 
 def read_config(config_file):
@@ -50,6 +51,45 @@ def read_conf(config_file):
         data = json.load(jsonfile)
 
     return data
+
+
+def read_snowprob(curdate, snowprob_conf):
+    """Read probability of snow data.
+
+    Allows searching some timesteps bawckwards, if file does not exist for the current timestep.
+
+    """
+
+    path = Path(snowprob_conf["dir"])
+
+    curfile = path / snowprob_conf["filename"].format(timestamp=curdate.strftime("%Y%m%d%H%M"))
+
+    prev_time = curdate
+    while not curfile.exists():
+        # Find the previous file
+        timediff = curdate - prev_time
+        if timediff.total_seconds() > (snowprob_conf["data"]["allow_timediff"] * 60):
+            raise FileNotFoundError(
+                f"Could not find snow probability file for {curdate} or older, tried up to {prev_time}"
+            )
+        prev_time = prev_time - timedelta(minutes=snowprob_conf["data"]["timeres"])
+        curfile = path / snowprob_conf["data"]["filename"].format(timestamp=prev_time.strftime("%Y%m%d%H%M"))
+
+    (
+        snowprob,
+        snowprob_quantity,
+        snowprob_timestamp,
+        snowprob_gain,
+        snowprob_offset,
+        snowprob_nodata,
+        snowprob_undetect,
+    ) = read_hdf5(curfile, qty="SNOWPROB")
+
+    snowprob = snowprob.astype(np.float32)
+    snowprob[snowprob == snowprob_nodata] = np.nan
+    snowprob[snowprob == snowprob_undetect] = 0
+
+    return snowprob
 
 
 def read_hdf5(image_h5_file, qty="DBZH"):
