@@ -238,6 +238,7 @@ def run(
     only_deterministic_forecast=False,
     only_observations=False,
     only_ensemble_forecast=False,
+    use_snowprob=True,
 ):
     """
     Run the interpolation calculation process for given ensemble members.
@@ -296,19 +297,18 @@ def run(
     file_dict_accum = None
     first_arr = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array), lut_rr_obs)
 
-    # Placeholder for snow probability handling, once the data is available
-    snowprob_file = (
-        f"{conf['input']['snowprob']['data']['dir']}/{conf['input']['snowprob']['data']['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
-    )
-    (
-        snowprob,
-        snowprob_quantity,
-        snowprob_timestamp,
-        snowprob_gain,
-        snowprob_offset,
-        snowprob_nodata,
-        snowprob_undetect,
-    ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
+    if use_snowprob:
+        # Placeholder for snow probability handling, once the data is available
+        snowprob_file = f"{conf['input']['snowprob']['data']['dir']}/{conf['input']['snowprob']['data']['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
+        (
+            snowprob,
+            snowprob_quantity,
+            snowprob_timestamp,
+            snowprob_gain,
+            snowprob_offset,
+            snowprob_nodata,
+            snowprob_undetect,
+        ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
 
     leadtimes = pd.date_range(
         start=curdate,
@@ -378,10 +378,12 @@ def run(
 
             # Save rate to file every 5 minutes
             if int(lt.minute) % 5 == 0 and ensno == "det":
+                # Change unit from mm/timeresolution to mm/h
+                arr_ = arr * 60 / timestep
 
                 # Save rate array
                 arr_ = utils.convert_dtype(
-                    arr,
+                    arr_,
                     conf["output"]["rate"],
                     nodata_mask,
                     undetect_mask,
@@ -410,8 +412,8 @@ def run(
                     enddate,
                     endtime,
                     conf["output"]["interpolation"],
-                    quantity = "RATE"
-                )           
+                    quantity="RATE",
+                )
 
         if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
             logging.info(f"Reading motion field for ensemble member {ensno}")
@@ -508,6 +510,7 @@ if __name__ == "__main__":
         help="Only process deterministic forecast (ensemble members ignored)",
     )
     parser.add_argument("--config", type=str, default="ravake-ens", help="Config file to use.")
+    parser.add_argument("--no-snowprob", action="store_false", dest="use_snowprob", help="Use snow probability")
 
     options = parser.parse_args()
 
@@ -521,4 +524,5 @@ if __name__ == "__main__":
         only_deterministic_forecast=options.only_deterministic_forecast,
         only_observations=options.only_observations,
         only_ensemble_forecast=options.only_ensemble_forecast,
+        use_snowprob=options.use_snowprob,
     )
