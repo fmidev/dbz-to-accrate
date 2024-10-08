@@ -294,18 +294,18 @@ def write_accumulated_h5(
     # Insert date and time to file_dict
     file_dict_accum["/what"] = {
         "date": date,
-        "object": np.string_("COMP"),
-        "source": np.string_("ORG:247"),
+        "object": np.bytes_("COMP"),
+        "source": np.bytes_("ORG:247"),
         "time": time,
-        "version": np.string_("H5rad 2.0"),
+        "version": np.bytes_("H5rad 2.0"),
     }
     # Insert startdate and -time and enddate- and time
     file_dict_accum["/dataset1/data1/what"] = {
         "gain": output_conf["gain"],
         "nodata": output_conf["nodata"],
         "offset": output_conf["offset"],
-        "product": np.string_("COMP"),
-        "quantity": np.string_(quantity),
+        "product": np.bytes_("COMP"),
+        "quantity": np.bytes_(quantity),
         "undetect": output_conf["undetect"],
         "startdate": startdate,
         "starttime": starttime,
@@ -317,8 +317,8 @@ def write_accumulated_h5(
         "DATASET": accumulated_image,
         "COMPRESSION": "gzip",
         "COMPRESSION_OPTS": 6,
-        "CLASS": np.string_("IMAGE"),
-        "IMAGE_VERSION": np.string_("1.2"),
+        "CLASS": np.bytes_("IMAGE"),
+        "IMAGE_VERSION": np.bytes_("1.2"),
     }
     # Write hdf5 file from file_dict
     with hiisi.HiisiHDF(output_h5, "w") as h:
