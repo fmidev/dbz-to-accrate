@@ -68,12 +68,12 @@ def read_snowprob(curdate, snowprob_conf):
     while not curfile.exists():
         # Find the previous file
         timediff = curdate - prev_time
-        if timediff.total_seconds() > (snowprob_conf["data"]["allow_timediff"] * 60):
+        if timediff.total_seconds() > (snowprob_conf["allow_timediff"] * 60):
             raise FileNotFoundError(
                 f"Could not find snow probability file for {curdate} or older, tried up to {prev_time}"
             )
-        prev_time = prev_time - timedelta(minutes=snowprob_conf["data"]["timeres"])
-        curfile = path / snowprob_conf["data"]["filename"].format(timestamp=prev_time.strftime("%Y%m%d%H%M"))
+        prev_time = prev_time - timedelta(minutes=snowprob_conf["timeres"])
+        curfile = path / snowprob_conf["filename"].format(timestamp=prev_time.strftime("%Y%m%d%H%M"))
 
     (
         snowprob,
