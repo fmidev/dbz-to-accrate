@@ -33,7 +33,7 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
         snowprob = utils.read_snowprob(
             datetime.strptime(tstamp.decode(), "%Y%m%d%H%M%S"), conf["input"]["snowprob"]["data"]
         )
-        snow_threshold = conf["input"]["snowprob"].get("snow_threshold")
+        snow_threshold = conf["input"]["snowprob"]["data"].get("snow_threshold")
     else:
         snowprob = np.zeros_like(arr)
         snow_threshold = None
