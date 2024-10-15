@@ -131,6 +131,8 @@ def dBZtoRATE_lut(dbz, lut_rr, lut_sr, snowprob, snow_threshold=50):
     rate -- precipitation rate
 
     """
+    if snow_threshold is None:
+        snow_threshold = 50
     # Calculate rain rate
     rate = lut_rr[dbz]
     rate[snowprob > snow_threshold] = lut_sr[dbz][snowprob > snow_threshold]
