@@ -66,10 +66,15 @@ def run(timestamp, config, use_snowprob=True):
     # file of first timestamp to avoid having to wait for newer data.
     if use_snowprob:
         snowprob = utils.read_snowprob(first_timestep, snowprob_conf)
+        snow_threshold = snowprob_conf.get("snow_threshold")
 
         # Convert image arrays dBZ -> rate
-        first_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(first_image_array), lut_rr, lut_sr, snowprob)
-        second_image_array = dbzh_to_rate.dBZtoRATE_lut(np.int_(second_image_array), lut_rr, lut_sr, snowprob)
+        first_image_array = dbzh_to_rate.dBZtoRATE_lut(
+            np.int_(first_image_array), lut_rr, lut_sr, snowprob, snow_threshold=snow_threshold
+        )
+        second_image_array = dbzh_to_rate.dBZtoRATE_lut(
+            np.int_(second_image_array), lut_rr, lut_sr, snowprob, snow_threshold=snow_threshold
+        )
     else:
         first_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array), lut_rr)
         second_image_array = dbzh_to_rate.dBZtoRR_lut(np.int_(second_image_array), lut_rr)

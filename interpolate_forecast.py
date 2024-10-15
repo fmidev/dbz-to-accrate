@@ -33,10 +33,12 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
         snowprob = utils.read_snowprob(
             datetime.strptime(tstamp.decode(), "%Y%m%d%H%M%S"), conf["input"]["snowprob"]["data"]
         )
+        snow_threshold = conf["input"]["snowprob"].get("snow_threshold")
     else:
         snowprob = np.zeros_like(arr)
+        snow_threshold = None
 
-    arr = dbzh_to_rate.dBZtoRATE_lut(np.int_(arr), lut_rr, lut_sr, snowprob)
+    arr = dbzh_to_rate.dBZtoRATE_lut(np.int_(arr), lut_rr, lut_sr, snowprob, snow_threshold=snow_threshold)
     arr[nodata_mask] = np.nan
     arr[undetect_mask] = 0
 
