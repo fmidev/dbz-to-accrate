@@ -15,7 +15,7 @@ import utils
 import advection_correction
 
 
-def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=None):
+def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=None, use_snowprob=True):
     arr, qty, tstamp, gain, offset, nodata, undetect = utils.read_hdf5(file, qty="DBZH")
     # Convert to rain rate
     nodata_mask = arr == nodata
@@ -28,7 +28,17 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
     if file_dict_accum is None:
         file_dict_accum = utils.init_filedict_accumulation(file)
 
-    arr = dbzh_to_rate.dBZtoRR_lut(np.int_(arr), lut_rr)
+    if use_snowprob:
+        # Load snow probability data
+        snowprob = utils.read_snowprob(
+            datetime.strptime(tstamp.decode(), "%Y%m%d%H%M%S"), conf["input"]["snowprob"]["data"]
+        )
+        snow_threshold = conf["input"]["snowprob"]["data"].get("snow_threshold")
+    else:
+        snowprob = np.zeros_like(arr)
+        snow_threshold = None
+
+    arr = dbzh_to_rate.dBZtoRATE_lut(np.int_(arr), lut_rr, lut_sr, snowprob, snow_threshold=snow_threshold)
     arr[nodata_mask] = np.nan
     arr[undetect_mask] = 0
 
@@ -71,6 +81,7 @@ def process_observations(
     lut_rr,
     lut_sr,
     config,
+    use_snowprob=True,
 ):
     """
     Process observations and perform interpolation to 1 min timestep.
@@ -89,6 +100,7 @@ def process_observations(
         lut_rr_ens (dict): Lookup table for dbz - rain rate conversion for ensemble data.
         lut_sr_ens (dict): Lookup table for dbz - snow rate conversion for ensemble data.
         config (str): Configuration.
+        use_snowprob (bool): Use snow probability data.
 
     Returns:
         None
@@ -114,7 +126,7 @@ def process_observations(
                 timestamp=f"{tt:%Y%m%d%H%M}",
             )
             arr, nodata_mask, undetect_mask, file_dict_accum, _, _ = load_file(
-                file, timestep, conf, lut_rr, lut_sr, file_dict_accum=None
+                file, timestep, conf, lut_rr, lut_sr, file_dict_accum=None, use_snowprob=use_snowprob
             )
             if FILE_DICT_ACCUM is None:
                 FILE_DICT_ACCUM = file_dict_accum
@@ -297,19 +309,6 @@ def run(
     file_dict_accum = None
     first_arr = dbzh_to_rate.dBZtoRR_lut(np.int_(first_image_array), lut_rr_obs)
 
-    if use_snowprob:
-        # Placeholder for snow probability handling, once the data is available
-        snowprob_file = f"{conf['input']['snowprob']['data']['dir']}/{conf['input']['snowprob']['data']['filename'].format(timestamp=curdate.strftime('%Y%m%d%H%M'))}"
-        (
-            snowprob,
-            snowprob_quantity,
-            snowprob_timestamp,
-            snowprob_gain,
-            snowprob_offset,
-            snowprob_nodata,
-            snowprob_undetect,
-        ) = utils.read_hdf5(snowprob_file, qty="SNOWPROB")
-
     leadtimes = pd.date_range(
         start=curdate,
         end=curdate + timedelta(minutes=conf["input"][input_data]["data"]["fc_len"]),
@@ -349,6 +348,7 @@ def run(
             lut_rr_obs,
             lut_sr_obs,
             config,
+            use_snowprob=use_snowprob,
         )
         return
 
@@ -370,7 +370,7 @@ def run(
             )
 
             arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr_ens, lut_sr_ens = load_file(
-                file, timestep, conf, lut_rr_ens, lut_sr_ens, file_dict_accum
+                file, timestep, conf, lut_rr_ens, lut_sr_ens, file_dict_accum, use_snowprob=use_snowprob
             )
             data_arrays[ensno][lt] = arr
             nodata_masks[ensno][lt] = nodata_mask

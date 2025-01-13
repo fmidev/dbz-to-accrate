@@ -9,6 +9,7 @@ import logging
 import sys
 import pandas as pd
 from datetime import timedelta
+from pathlib import Path
 
 
 def read_config(config_file):
@@ -50,6 +51,61 @@ def read_conf(config_file):
         data = json.load(jsonfile)
 
     return data
+
+
+def read_snowprob(curdate, snowprob_conf):
+    """Read probability of snow data.
+
+    Allows searching some timesteps bawckwards, if file does not exist for
+    the current timestep. The allowed time difference should be defined
+    as minutes with the key "allow_timediff" in the snowprob_conf;
+    otherwise 5 minutes is used.
+
+    Parameters
+    ----------
+    curdate : datetime
+        The current time.
+    snowprob_conf : dict
+        The configuration for the snow probability data. Should include keys
+        "dir", "filename", "timeres", "allow_timediff".
+
+    Returns
+    -------
+    np.ndarray
+        The snow probability data.
+
+    """
+    path = Path(snowprob_conf["dir"])
+
+    curfile = path / snowprob_conf["filename"].format(timestamp=curdate.strftime("%Y%m%d%H%M"))
+    allowed_timediff = snowprob_conf.get("allow_timediff", 5) * 60
+
+    prev_time = curdate
+    while not curfile.exists():
+        # Find the previous file
+        timediff = curdate - prev_time
+        if timediff.total_seconds() > allowed_timediff:
+            raise FileNotFoundError(
+                f"Could not find snow probability file for {curdate} or older, tried up to {prev_time}"
+            )
+        prev_time = prev_time - timedelta(minutes=snowprob_conf["timeres"])
+        curfile = path / snowprob_conf["filename"].format(timestamp=prev_time.strftime("%Y%m%d%H%M"))
+
+    (
+        snowprob,
+        snowprob_quantity,
+        snowprob_timestamp,
+        snowprob_gain,
+        snowprob_offset,
+        snowprob_nodata,
+        snowprob_undetect,
+    ) = read_hdf5(curfile, qty="SNOWPROB")
+
+    snowprob = snowprob.astype(np.float32)
+    snowprob[snowprob == snowprob_nodata] = np.nan
+    snowprob[snowprob == snowprob_undetect] = 0
+
+    return snowprob
 
 
 def read_hdf5(image_h5_file, qty="DBZH"):
@@ -254,18 +310,18 @@ def write_accumulated_h5(
     # Insert date and time to file_dict
     file_dict_accum["/what"] = {
         "date": date,
-        "object": np.string_("COMP"),
-        "source": np.string_("ORG:247"),
+        "object": np.bytes_("COMP"),
+        "source": np.bytes_("ORG:247"),
         "time": time,
-        "version": np.string_("H5rad 2.0"),
+        "version": np.bytes_("H5rad 2.0"),
     }
     # Insert startdate and -time and enddate- and time
     file_dict_accum["/dataset1/data1/what"] = {
         "gain": output_conf["gain"],
         "nodata": output_conf["nodata"],
         "offset": output_conf["offset"],
-        "product": np.string_("COMP"),
-        "quantity": np.string_(quantity),
+        "product": np.bytes_("COMP"),
+        "quantity": np.bytes_(quantity),
         "undetect": output_conf["undetect"],
         "startdate": startdate,
         "starttime": starttime,
@@ -277,8 +333,8 @@ def write_accumulated_h5(
         "DATASET": accumulated_image,
         "COMPRESSION": "gzip",
         "COMPRESSION_OPTS": 6,
-        "CLASS": np.string_("IMAGE"),
-        "IMAGE_VERSION": np.string_("1.2"),
+        "CLASS": np.bytes_("IMAGE"),
+        "IMAGE_VERSION": np.bytes_("1.2"),
     }
     # Write hdf5 file from file_dict
     with hiisi.HiisiHDF(output_h5, "w") as h:

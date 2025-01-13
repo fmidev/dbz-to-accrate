@@ -117,7 +117,7 @@ def calc_lookuptables_dBZtoRATE(timeresolution, coef, nodata, undetect, gain, of
     return lut_rr, lut_sr
 
 
-def dBZtoRATE_lut(dbz, lut_rr, lut_sr, snowprob):
+def dBZtoRATE_lut(dbz, lut_rr, lut_sr, snowprob, snow_threshold=50):
     """Convert dBZ to rate using look-up table.
 
     Keyword arguments:
@@ -125,14 +125,17 @@ def dBZtoRATE_lut(dbz, lut_rr, lut_sr, snowprob):
     lut_rr -- look-up table for dBZ - rain rate conversion
     lut_sr -- look-up table for dBZ - snow rate conversion
     snowprob -- probability of snow array (values from 0 to 100)
+    snow_threshold -- threshold for snow probability to use Z-S relation (default 50)
 
     Return:
     rate -- precipitation rate
 
     """
+    if snow_threshold is None:
+        snow_threshold = 50
     # Calculate rain rate
     rate = lut_rr[dbz]
-    rate[snowprob > 50] = lut_sr[dbz][snowprob > 50]
+    rate[snowprob > snow_threshold] = lut_sr[dbz][snowprob > snow_threshold]
 
     return rate
 
