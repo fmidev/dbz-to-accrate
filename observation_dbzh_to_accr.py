@@ -193,8 +193,8 @@ def run(timestamp, config, use_snowprob=True):
         outfile = outdir / output_conf["accrate_snow"]["filename"].format(
             timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}', config=config
         )
-        startdate = f"{second_timestep:%Y%m%d}"
-        starttime = f"{second_timestep:%H%M00}"
+        startdate = f"{first_timestep:%Y%m%d}"
+        starttime = f"{first_timestep:%H%M00}"
         enddate = f"{second_timestep:%Y%m%d}"
         endtime = f"{second_timestep:%H%M00}"
         date = enddate
