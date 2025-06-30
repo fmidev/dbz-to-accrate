@@ -7,6 +7,9 @@ from scipy.ndimage import map_coordinates
 
 import numba as nb
 
+logger = logging.getLogger(__name__)
+
+
 """
 Original code (slightly modified) from pysteps documentation:
 https://pysteps.readthedocs.io/en/latest/auto_examples/advection_correction.html#sphx-glr-auto-examples-advection-correction-py
@@ -101,6 +104,8 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
     factor = 1 / T**2
 
     for i in range(t, T + t, t):
+        logger.info(f"Interpolating step {i} of {T + t}")
+        logger.info(f"{i}: Mapping coordinates for backwards array")
         pos1 = np.array((y - i / T * motion[1], x - i / T * motion[0]))
         pos1 = pos1.reshape(pos1.shape[0], -1)
         # NOTE: Expensive parts in this function is the map_coords call,
@@ -108,13 +113,19 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
         R1 = map_coords(arrs1, pos1)
         R1 = R1.reshape(arrs1.shape)
 
+        logger.info(f"{i}: Mapping coordinates for forwards array")
         pos2 = np.array((y + (T - i) / T * motion[1], x + (T - i) / T * motion[0]))
         pos2 = pos2.reshape(pos2.shape[0], -1)
         R2 = map_coords(arrs2, pos2)
         R2 = R2.reshape(arrs2.shape)
 
         # NOTE: This is also a time-consuming line, ~45% of time spent in this function
-        R0 += ((T - i) * R1 + i * R2) * factor
+        # R0 += ((T - i) * R1 + i * R2) * factor
+        logger.info(f"{i}: Calculating interpolated values")
+        tmp1 = (T - i) * R1 * factor
+        tmp2 = i * R2 * factor
+        R0 += tmp1
+        R0 += tmp2
 
     return R0
 
