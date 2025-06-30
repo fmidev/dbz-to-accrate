@@ -416,7 +416,7 @@ def run(
                 )
 
         if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
-            logging.info(f"Reading motion field for ensemble member {ensno}")
+            logging.info(f"Reading motion field and interpolating for ensemble member {ensno}")
             R0 = read_motion_and_interpolate(
                 ensno, conf, input_data, config, timestamp, leadtimes, timestep, data_arrays, motion_fields
             )
@@ -426,8 +426,11 @@ def run(
                 interp_arrays[ensno][lt] = R0[i]
                 interp_arrays[ensno][lt][nodata_masks[ensno][lt]] = np.nan
 
+            logging.info(f"Interpolation done for ensemble member {ensno}")
+
         else:
             # No need to interpolate, just sum the arrays
+            logging.info(f"No interpolation needed for ensemble member {ensno}, summing arrays")
             for i, lt in enumerate(leadtimes):
                 keys_in_interval = [
                     k for k in data_arrays[ensno].keys() if k <= lt and k > lt - timedelta(minutes=output_timestep)
@@ -445,6 +448,7 @@ def run(
                 interp_arrays[ensno][lt][nodata_mask] = np.nan
 
         for i, lt in enumerate(leadtimes):
+            logging.info(f"Writing interpolation result for ensemble member {ensno} at leadtime {lt}")
             nodata_mask = np.isnan(interp_arrays[ensno][lt])
             undetect_mask = interp_arrays[ensno][lt] == 0
 
