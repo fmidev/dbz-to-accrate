@@ -15,7 +15,9 @@ import utils
 import advection_correction
 
 
-def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=None, use_snowprob=True):
+def load_file(
+    file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=None, use_snowprob=True, snowprob_arr=None
+):
     arr, qty, tstamp, gain, offset, nodata, undetect = utils.read_hdf5(file, qty="DBZH")
     # Convert to rain rate
     nodata_mask = arr == nodata
@@ -28,21 +30,22 @@ def load_file(file, timestep, conf, lut_rr=None, lut_sr=None, file_dict_accum=No
     if file_dict_accum is None:
         file_dict_accum = utils.init_filedict_accumulation(file)
 
-    if use_snowprob:
+    if use_snowprob and snowprob_arr is None:
         # Load snow probability data
-        snowprob = utils.read_snowprob(
+        snowprob_arr = utils.read_snowprob(
             datetime.strptime(tstamp.decode(), "%Y%m%d%H%M%S"), conf["input"]["snowprob"]["data"]
         )
-        snow_threshold = conf["input"]["snowprob"]["data"].get("snow_threshold")
-    else:
-        snowprob = np.zeros_like(arr)
-        snow_threshold = None
+    elif not use_snowprob:
+        # else:
+        snowprob_arr = np.zeros_like(arr)
+        # snow_threshold = None
 
-    arr = dbzh_to_rate.dBZtoRATE_lut(np.int_(arr), lut_rr, lut_sr, snowprob, snow_threshold=snow_threshold)
+    snow_threshold = conf["input"]["snowprob"]["data"].get("snow_threshold") if use_snowprob else None
+    arr = dbzh_to_rate.dBZtoRATE_lut(np.int_(arr), lut_rr, lut_sr, snowprob_arr, snow_threshold=snow_threshold)
     arr[nodata_mask] = np.nan
     arr[undetect_mask] = 0
 
-    return arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr, lut_sr
+    return arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr, lut_sr, snowprob_arr
 
 
 @dask.delayed
@@ -126,7 +129,14 @@ def process_observations(
                 timestamp=f"{tt:%Y%m%d%H%M}",
             )
             arr, nodata_mask, undetect_mask, file_dict_accum, _, _ = load_file(
-                file, timestep, conf, lut_rr, lut_sr, file_dict_accum=None, use_snowprob=use_snowprob
+                file,
+                timestep,
+                conf,
+                lut_rr,
+                lut_sr,
+                file_dict_accum=None,
+                use_snowprob=use_snowprob,
+                snowprob_arr=None,
             )
             if FILE_DICT_ACCUM is None:
                 FILE_DICT_ACCUM = file_dict_accum
@@ -354,6 +364,7 @@ def run(
 
     motion_fields = {}
     # Calculate advection correction for each ensemble member
+    snowprob_arr = None
     for ensno in ensemble_members:
         logging.info(f"Processing ensemble member {ensno}")
         # Read data for this ensemble member and calculate 5-min accumulation
@@ -369,8 +380,15 @@ def run(
                 ensno=ensno,
             )
 
-            arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr_ens, lut_sr_ens = load_file(
-                file, timestep, conf, lut_rr_ens, lut_sr_ens, file_dict_accum, use_snowprob=use_snowprob
+            arr, nodata_mask, undetect_mask, file_dict_accum, lut_rr_ens, lut_sr_ens, snowprob_arr = load_file(
+                file,
+                timestep,
+                conf,
+                lut_rr_ens,
+                lut_sr_ens,
+                file_dict_accum,
+                use_snowprob=use_snowprob,
+                snowprob_arr=snowprob_arr,
             )
             data_arrays[ensno][lt] = arr
             nodata_masks[ensno][lt] = nodata_mask
