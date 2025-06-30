@@ -90,7 +90,7 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
     Parameters:
     - arrs1 (ndarray): First array to interpolate.
     - arrs2 (ndarray): Second array to interpolate.
-    - motion (tuple): Motion vector (x, y) specifying the direction and magnitude of motion.
+    - motion (ndarray): Motion vector (2, x, y) specifying the direction and magnitude of motion.
     - T (int): Total number of interpolation steps.
     - t (int): Time step between each interpolation.
 
@@ -132,15 +132,42 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
         # NOTE: This is also a time-consuming line, ~45% of time spent in this function
         # R0 += ((T - i) * R1 + i * R2) * factor
         logger.info(f"{i}: Calculating interpolated values")
-        tmp1 = (T - i) * R1 * factor
-        tmp2 = i * R2 * factor
-        R0 += tmp1
-        R0 += tmp2
+        # tmp1 = (T - i) * R1 * factor
+        # tmp2 = i * R2 * factor
+        # R0 += tmp1
+        # R0 += tmp2
+        R0 = sum_arrays(R0, R1, R2, T, i, factor)
 
     R0 = R0.reshape(arrs1.shape)
+
     return R0
 
 
+@nb.njit(fastmath=True, parallel=False)
+def sum_arrays(R0, r1, R2, T, i, factor):
+    """
+    Sum the arrays R0, r1, and R2 based on the interpolation factor.
+
+    Parameters:
+    - R0 (ndarray): The initial array to accumulate results.
+    - r1 (ndarray): The first interpolated array.
+    - R2 (ndarray): The second interpolated array.
+    - T (int): Total number of interpolation steps.
+    - i (int): Current interpolation step.
+
+    Returns:
+    - ndarray: Updated R0 with accumulated values.
+
+    """
+    m, n = R0.shape
+
+    factor1 = (T - i) * factor
+    factor2 = i * factor
+
+    for j in range(n):
+        for k in range(m):
+            R0[k, j] += factor1 * r1[k, j] + factor2 * R2[k, j]
+    return R0
 @nb.njit(fastmath=True, parallel=False)
 def map_coords(ars, coords):
     """
