@@ -99,7 +99,7 @@ def run(timestamp, config, use_snowprob=True):
 
     nodata_mask = ~np.isfinite(acc_rate)
     undetect_mask = acc_rate == 0
-    acc_rate = utils.convert_dtype(acc_rate, output_conf["accrate"], nodata_mask, undetect_mask)
+    acc_rate_packed = utils.convert_dtype(acc_rate, output_conf["accrate"], nodata_mask, undetect_mask)
 
     # Write to file
     outdir = Path(
@@ -122,7 +122,7 @@ def run(timestamp, config, use_snowprob=True):
     time = endtime
     utils.write_accumulated_h5(
         outfile,
-        acc_rate,
+        acc_rate_packed,
         file_dict_accum,
         date,
         time,
@@ -170,6 +170,48 @@ def run(timestamp, config, use_snowprob=True):
         quantity="RATE",
     )
 
+    # Save accumulated snowfall
+    if use_snowprob and output_conf.get("accrate_snow"):
+
+        snowprob_thr = output_conf["accrate_snow"].get("snowprod_threshold", 0.5)
+
+        snow_mask = snowprob >= snowprob_thr
+        snow = np.where(snow_mask, acc_rate, np.nan)
+
+        nodata_mask = ~np.isfinite(snow)
+        undetect_mask = snow == 0
+        snow_packed = utils.convert_dtype(snow, output_conf["accrate_snow"], nodata_mask, undetect_mask)
+
+        outdir = Path(
+            output_conf["accrate_snow"]["dir"].format(
+                year=second_timestamp[0:4],
+                month=second_timestamp[4:6],
+                day=second_timestamp[6:8],
+            )
+        )
+        outdir.mkdir(parents=True, exist_ok=True)
+        outfile = outdir / output_conf["accrate_snow"]["filename"].format(
+            timestamp=timestamp, timeres=f'{input_conf["timeres"]:03}', config=config
+        )
+        startdate = f"{first_timestep:%Y%m%d}"
+        starttime = f"{first_timestep:%H%M00}"
+        enddate = f"{second_timestep:%Y%m%d}"
+        endtime = f"{second_timestep:%H%M00}"
+        date = enddate
+        time = endtime
+        utils.write_accumulated_h5(
+            outfile,
+            snow_packed,
+            file_dict_accum,
+            date,
+            time,
+            startdate,
+            starttime,
+            enddate,
+            endtime,
+            output_conf["accrate_snow"],
+            quantity="ACSNOW",
+        )
 
 if __name__ == "__main__":
     # Parse commandline arguments
