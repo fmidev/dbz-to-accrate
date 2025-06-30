@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 from pysteps import io, motion, rcparams
 from pysteps.utils import conversion, dimension
