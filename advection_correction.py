@@ -100,25 +100,34 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
     """
     x, y = np.meshgrid(np.arange(arrs1[0].shape[1], dtype=float), np.arange(arrs1[0].shape[0], dtype=float))
 
-    R0 = np.zeros_like(arrs1)
+    x_ = x.ravel()
+    y_ = y.ravel()
+
+    # R0 = np.zeros_like(arrs1)
+    R0 = np.zeros((arrs1.shape[0], arrs1.shape[1] * arrs1.shape[2]))
+
+    motion_x_ = motion[0].ravel()
+    motion_y_ = motion[1].ravel()
 
     factor = 1 / T**2
 
     for i in range(t, T + t, t):
         logger.info(f"Interpolating step {i} of {T + t}")
         logger.info(f"{i}: Mapping coordinates for backwards array")
-        pos1 = np.array((y - i / T * motion[1], x - i / T * motion[0]))
-        pos1 = pos1.reshape(pos1.shape[0], -1)
+        # pos1 = np.array((y - i / T * motion[1], x - i / T * motion[0]))
+        # pos1 = pos1.reshape(pos1.shape[0], -1)
+        pos1 = np.array((y_ - i / T * motion_y_, x_ - i / T * motion_x_))
         # NOTE: Expensive parts in this function is the map_coords call,
         # each call about 25% of time spent in this function
         R1 = map_coords(arrs1, pos1)
-        R1 = R1.reshape(arrs1.shape)
+        # R1 = R1.reshape(arrs1.shape)
 
         logger.info(f"{i}: Mapping coordinates for forwards array")
-        pos2 = np.array((y + (T - i) / T * motion[1], x + (T - i) / T * motion[0]))
-        pos2 = pos2.reshape(pos2.shape[0], -1)
+        # pos2 = np.array((y + (T - i) / T * motion[1], x + (T - i) / T * motion[0]))
+        # pos2 = pos2.reshape(pos2.shape[0], -1)
+        pos2 = np.array((y_ + (T - i) / T * motion_y_, x_ + (T - i) / T * motion_x_))
         R2 = map_coords(arrs2, pos2)
-        R2 = R2.reshape(arrs2.shape)
+        # R2 = R2.reshape(arrs2.shape)
 
         # NOTE: This is also a time-consuming line, ~45% of time spent in this function
         # R0 += ((T - i) * R1 + i * R2) * factor
@@ -128,6 +137,7 @@ def interpolate_ensemble(arrs1, arrs2, motion, T=5, t=1):
         R0 += tmp1
         R0 += tmp2
 
+    R0 = R0.reshape(arrs1.shape)
     return R0
 
 
