@@ -1,6 +1,7 @@
 name: fmippn_dbzhtorate
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - python>=3.7
   - numpy
@@ -13,5 +14,6 @@ dependencies:
   - pandas
   - numba
   - dask
+  - bottleneck
   - pip:
       - git+https://github.com/fmidev/hiisi.git

@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 
 import dask
+import bottleneck as bn
 
 from pysteps import motion
 
@@ -461,7 +462,7 @@ def run(
                     )
 
                 arr = np.stack([data_arrays[ensno][k] for k in keys_in_interval])
-                interp_arrays[ensno][lt] = np.nansum(arr, axis=0)
+                interp_arrays[ensno][lt] = bn.nansum(arr, axis=0)
                 nodata_mask = np.all([nodata_masks[ensno][k] for k in keys_in_interval], axis=0)
                 interp_arrays[ensno][lt][nodata_mask] = np.nan
 
