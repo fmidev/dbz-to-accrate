@@ -433,6 +433,31 @@ def run(
                     conf["output"]["interpolation"],
                     quantity="RATE",
                 )
+            if (int(lt.minute) % 5 == 0) and conf["input"][input_data]["data"]["timeres"] == conf["interp"]["timeres"]:
+                # Sum the arrays for the past five minutes
+                logging.info(f"Summing arrays for ensemble member {ensno} at leadtime {lt}")
+                # Calculate the keys for the past 5 minutes
+                keys = [lt - timedelta(minutes=t) for t in range(0, 5 * timestep, timestep)]
+
+                if len(keys) < (output_timestep / timestep):
+                    raise ValueError(
+                        f"Could not find enough data to calculate accumulation at {lt} for {ensno}. "
+                        f"Found {len(keys)} out of {output_timestep / timestep} required."
+                    )
+
+                arr = np.stack([data_arrays[ensno][k] for k in keys])
+                interp_arrays[ensno][lt] = bn.nansum(arr, axis=0)
+                nodata_mask = np.all([nodata_masks[ensno][k] for k in keys], axis=0)
+                interp_arrays[ensno][lt][nodata_mask] = np.nan
+
+                # remove the arrays that are no longer needed
+                for k in keys:
+                    try:
+                        del data_arrays[ensno][k]
+                        del nodata_masks[ensno][k]
+                        del undetect_masks[ensno][k]
+                    except KeyError:
+                        pass
 
         if conf["input"][input_data]["data"]["timeres"] > conf["interp"]["timeres"]:
             logging.info(f"Reading motion field and interpolating for ensemble member {ensno}")
@@ -446,25 +471,6 @@ def run(
                 interp_arrays[ensno][lt][nodata_masks[ensno][lt]] = np.nan
 
             logging.info(f"Interpolation done for ensemble member {ensno}")
-
-        else:
-            # No need to interpolate, just sum the arrays
-            logging.info(f"No interpolation needed for ensemble member {ensno}, summing arrays")
-            for i, lt in enumerate(leadtimes):
-                keys_in_interval = [
-                    k for k in data_arrays[ensno].keys() if k <= lt and k > lt - timedelta(minutes=output_timestep)
-                ]
-
-                if len(keys_in_interval) < (output_timestep / timestep):
-                    raise ValueError(
-                        f"Could not find enough data to calculate accumulation at {lt} for {ensno}. "
-                        f"Found {len(keys_in_interval)} out of {output_timestep / timestep} required."
-                    )
-
-                arr = np.stack([data_arrays[ensno][k] for k in keys_in_interval])
-                interp_arrays[ensno][lt] = bn.nansum(arr, axis=0)
-                nodata_mask = np.all([nodata_masks[ensno][k] for k in keys_in_interval], axis=0)
-                interp_arrays[ensno][lt][nodata_mask] = np.nan
 
         for i, lt in enumerate(leadtimes):
             logging.info(f"Writing interpolation result for ensemble member {ensno} at leadtime {lt}")
