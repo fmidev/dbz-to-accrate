@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # Install conda
-RUN apt-get -qq update && apt-get -qq -y install curl bzip2 libgl1-mesa-glx libegl1-mesa libopengl0\
+RUN apt-get -qq update && apt-get -qq -y install gcc curl bzip2 libgl1-mesa-glx libegl1-mesa libopengl0\
     && curl -sSL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -bfp /usr/local \
     && rm -rf /tmp/miniconda.sh \
@@ -30,6 +30,14 @@ ENV CONDA_DEFAULT_ENV fmippn_dbzhtorate
 WORKDIR .
 RUN mkdir input output log
 COPY . /
+
+# Build the Cython extension
+# RUN python setup.py build_ext --inplace
+
+# config values to speed up imports
+ENV PYSTEPSRC /.pystepsrc
+ENV MPLCONFIGDIR /tmp
+ENV XDG_CACHE_HOME /tmp
 
 # Run
 ENV config ravake
