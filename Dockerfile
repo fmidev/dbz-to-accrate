@@ -15,7 +15,7 @@ COPY environment.yml .
 ENV PYTHONDONTWRITEBYTECODE=true
 
 # RUN conda env create -f environment.yml -n fmippn
-RUN conda install -c conda-forge mamba && \
+RUN conda install -c conda-forge --override-channels mamba && \
     mamba env create -f environment.yml -n fmippn_dbzhtorate && \
     mamba clean --all -f -y
 

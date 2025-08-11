@@ -9,7 +9,7 @@ dependencies:
   - git
   - h5py
   - pip
-  - pysteps
+  - pysteps=1.18.1
   - opencv
   - pandas
   - numba
