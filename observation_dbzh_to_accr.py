@@ -210,7 +210,7 @@ def run(timestamp, config, use_snowprob=True):
             enddate,
             endtime,
             output_conf["accrate_snow"],
-            quantity="ACSNOW",
+            quantity="ACRR",
         )
 
 if __name__ == "__main__":

@@ -306,6 +306,8 @@ def write_accumulated_h5(
     output_conf
 
     """
+    if output_conf.get("quantity") is not None:
+        quantity = output_conf["quantity"]
 
     # Insert date and time to file_dict
     file_dict_accum["/what"] = {
