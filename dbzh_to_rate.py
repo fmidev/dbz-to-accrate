@@ -23,6 +23,33 @@ def read_coef(configfile="config_dbzhtorate.json"):
     return coef
 
 
+def calcConvLimit(coef):
+    """Calculate dBZ limit when to use frontal/convective rain rate formula.
+
+    Keyword arguments:
+    coef -- dictionary containing Z(R) A and B coefficients zr_a, zr_b, zr_a_c and zr_a_c (c for convective rain)
+
+    Return:
+    conv_dbzlim -- dBZ limit for convective rain
+
+    """
+
+    zr_a = coef["zr_a"]
+    zr_b = coef["zr_b"]
+    zr_a_c = coef["zr_a_c"]
+    zr_b_c = coef["zr_b_c"]
+
+    # Calculate dBZ limit when to use frontal/convective rain rate formula
+    if zr_a == zr_a_c:
+        conv_dbzlim = 10.0 * math.log10(zr_a)
+    else:
+        R = (zr_a / zr_a_c) ** (1.0 / (zr_b_c - zr_b))
+        conv_dbzlim = 10.0 * math.log10(zr_a * (R**zr_b))
+    conv_rlim = ((10 ** (conv_dbzlim / 10.0)) / zr_a) ** (1.0 / zr_b)
+
+    return conv_dbzlim, conv_rlim
+
+
 def dBZtoRR(dbz, coef):
     """Convert dBZ to rain rate (frontal/convective rain).
 

@@ -81,6 +81,16 @@ def run(timestamp, config, use_snowprob=True):
 
     # Init output file_dict
     file_dict_accum = utils.init_filedict_accumulation(first_file)
+    # Add Z-R coeffs to file_dict
+    file_dict_accum["/how"]["zr_a"] = coef["zr_a"]
+    file_dict_accum["/how"]["zr_b"] = coef["zr_b"]
+    file_dict_accum["/how"]["zs_a"] = coef["zs_a"]
+    file_dict_accum["/how"]["zs_b"] = coef["zs_b"]
+    file_dict_accum["/how"]["zr_a_conv"] = coef["zr_a_c"]
+    file_dict_accum["/how"]["zr_b_conv"] = coef["zr_b_c"]
+    convlim_dbz, convlim_r = dbzh_to_rate.calcConvLimit(coef)
+    file_dict_accum["/how"]["conv_limit_dBZ"] = convlim_dbz
+    file_dict_accum["/how"]["conv_limit_rate"] = convlim_r
 
     # Change nodata and undetect to zero and np.nan before interpolation
     first_image_array[nodata_mask_first] = np.nan

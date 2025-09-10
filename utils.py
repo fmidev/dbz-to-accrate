@@ -290,6 +290,7 @@ def write_accumulated_h5(
     endtime,
     output_conf,
     quantity="ACRR",
+    product="RR",
 ):
     """Write accumulated precipitation rate to ODIM hdf5 file.
 
@@ -308,6 +309,8 @@ def write_accumulated_h5(
     """
     if output_conf.get("quantity") is not None:
         quantity = output_conf["quantity"]
+    if output_conf.get("product") is not None:
+        product = output_conf["product"]
 
     # Insert date and time to file_dict
     file_dict_accum["/what"] = {
@@ -322,13 +325,20 @@ def write_accumulated_h5(
         "gain": output_conf["gain"],
         "nodata": output_conf["nodata"],
         "offset": output_conf["offset"],
-        "product": np.bytes_("COMP"),
+        "product": np.bytes_(product),
         "quantity": np.bytes_(quantity),
         "undetect": output_conf["undetect"],
         "startdate": startdate,
         "starttime": starttime,
         "enddate": enddate,
         "endtime": endtime,
+    }
+    # TODO fix to get correct accumulation number
+    file_dict_accum["/dataset1/how"] = {
+        "ACCnum": 1,
+    }
+    file_dict_accum["/dataset1/what"] = {
+        "product": np.bytes_(product),
     }
     # Insert accumulated dataset into file_dict
     file_dict_accum["/dataset1/data1/data"] = {
