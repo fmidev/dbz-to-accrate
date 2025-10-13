@@ -138,7 +138,7 @@ def run(timestamp, config):
                     )
                 )
                 enddate = fc_timestamp[0:8]
-                endtime = fc_timestamp[8:14]
+                endtime = fc_timestamp[8:]
                 date = enddate
                 time = endtime
 
@@ -197,7 +197,7 @@ def run(timestamp, config):
                     )
                 )
                 enddate = fc_timestamp[0:8]
-                endtime = fc_timestamp[8:14]
+                endtime = fc_timestamp[8:]
                 date = enddate
                 time = endtime
 
@@ -255,7 +255,7 @@ def run(timestamp, config):
                 startdate = startdate_first
                 starttime = starttime_first
                 enddate = fc_timestamp[0:8]
-                endtime = fc_timestamp[8:14]
+                endtime = fc_timestamp[8:]
                 date = enddate
                 time = endtime
 

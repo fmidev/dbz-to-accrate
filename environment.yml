@@ -16,4 +16,4 @@ dependencies:
   - dask
   - bottleneck
   - pip:
-      - git+https://github.com/fmidev/hiisi.git
+      - git+https://github.com/fmidev/hiisi.git@string-types

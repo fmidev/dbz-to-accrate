@@ -186,9 +186,9 @@ def process_observations(
                     )
                 )
                 enddate = f"{tt:%Y%m%d}"
-                endtime = f"{tt:%H%M}"
+                endtime = f"{tt:%H%M}00"
                 startdate = f"{tt - timedelta(minutes=timestep):%Y%m%d}"
-                starttime = f"{tt - timedelta(minutes=timestep):%H%M}"
+                starttime = f"{tt - timedelta(minutes=timestep):%H%M}00"
 
                 utils.write_accumulated_h5(
                     outfile,
@@ -397,6 +397,7 @@ def run(
 
             # Save rate to file every 5 minutes
             if int(lt.minute) % 5 == 0 and ensno == "det":
+                logging.info(f"Writing rate for ensemble member {ensno} at leadtime {lt}")
                 # Change unit from mm/timeresolution to mm/h
                 arr_ = arr * 60 / timestep
 
@@ -416,9 +417,9 @@ def run(
                     config=config,
                 )
                 enddate = f"{lt:%Y%m%d}"
-                endtime = f"{lt:%H%M}"
+                endtime = f"{lt:%H%M}00"
                 startdate = f"{lt - timedelta(minutes=timestep):%Y%m%d}"
-                starttime = f"{lt - timedelta(minutes=timestep):%H%M}"
+                starttime = f"{lt - timedelta(minutes=timestep):%H%M}00"
 
                 utils.write_accumulated_h5(
                     outfile,
@@ -493,9 +494,9 @@ def run(
                 config=config,
             )
             enddate = f"{lt:%Y%m%d}"
-            endtime = f"{lt:%H%M}"
+            endtime = f"{lt:%H%M}00"
             startdate = f"{lt - timedelta(minutes=timestep):%Y%m%d}"
-            starttime = f"{lt - timedelta(minutes=timestep):%H%M}"
+            starttime = f"{lt - timedelta(minutes=timestep):%H%M}00"
 
             utils.write_accumulated_h5(
                 outfile,
