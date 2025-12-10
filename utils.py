@@ -138,28 +138,38 @@ def read_hdf5(image_h5_file, qty="DBZH"):
         raise ValueError(f"{qty} array not found in the file {image_h5_file}!")
 
     # Read nodata and undetect values from metadata for masking
-    gen = comp.attr_gen("nodata")
-    pair = gen.__next__()
-    nodata = pair.value
-    gen = comp.attr_gen("undetect")
-    pair = gen.__next__()
-    undetect = pair.value
+    dset_what_attrs = comp[test].parent["what"].attrs
+    nodata = dset_what_attrs.get("nodata", None)
+    undetect = dset_what_attrs.get("undetect", None)
+    gain = dset_what_attrs.get("gain", None)
+    offset = dset_what_attrs.get("offset", None)
 
-    # Read gain and offset values from metadata
-    gen = comp.attr_gen("gain")
-    pair = gen.__next__()
-    gain = pair.value
-    gen = comp.attr_gen("offset")
-    pair = gen.__next__()
-    offset = pair.value
+    comp_what_attrs = comp["what"].attrs
+    date = comp_what_attrs.get("date", None)
+    time = comp_what_attrs.get("time", None)
 
-    # Read timestamp from metadata
-    gen = comp.attr_gen("date")
-    pair = gen.__next__()
-    date = pair.value
-    gen = comp.attr_gen("time")
-    pair = gen.__next__()
-    time = pair.value
+    # gen = comp.attr_gen("nodata")
+    # pair = gen.__next__()
+    # nodata = pair.value
+    # gen = comp.attr_gen("undetect")
+    # pair = gen.__next__()
+    # undetect = pair.value
+
+    # # Read gain and offset values from metadata
+    # gen = comp.attr_gen("gain")
+    # pair = gen.__next__()
+    # gain = pair.value
+    # gen = comp.attr_gen("offset")
+    # pair = gen.__next__()
+    # offset = pair.value
+
+    # # Read timestamp from metadata
+    # gen = comp.attr_gen("date")
+    # pair = gen.__next__()
+    # date = pair.value
+    # gen = comp.attr_gen("time")
+    # pair = gen.__next__()
+    # time = pair.value
 
     timestamp = date + time
 
